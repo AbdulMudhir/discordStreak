@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="7f1c6a87-755c-4365-9d49-4cad3961c86d" name="Default Changelist" comment="" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="ProjectId" id="1YlbBDXFQde4isld6KyMuJmDYoZ" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showExcludedFiles" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="restartRequiresConfirmation" value="false" />
+    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
+  </component>
+  <component name="RunManager">
+    <configuration name="discord Bot" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="discordStreak" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/discord Bot.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python.discord Bot" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="ServiceViewManager">
+    <option name="viewStates">
+      <list>
+        <serviceView>
+          <treeState>
+            <expand />
+            <select />
+          </treeState>
+        </serviceView>
+      </list>
+    </option>
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="7f1c6a87-755c-4365-9d49-4cad3961c86d" name="Default Changelist" comment="" />
+      <created>1583519990646</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1583519990646</updated>
+    </task>
+    <servers />
+  </component>
+  <component name="WindowStateProjectService">
+    <state x="734" y="356" width="1092" height="741" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1583520640708">
+      <screen x="0" y="0" width="2560" height="1400" />
+    </state>
+    <state x="734" y="356" width="1092" height="741" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1583520640708" />
+    <state width="2539" height="233" key="GridCell.Tab.0.bottom" timestamp="1583538499507">
+      <screen x="0" y="0" width="2560" height="1400" />
+    </state>
+    <state width="2539" height="233" key="GridCell.Tab.0.bottom/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1583538499507" />
+    <state width="1419" height="35" key="GridCell.Tab.0.bottom/0.0.2560.1400/2560.0.1440.860@2560.0.1440.860" timestamp="1583537713840" />
+    <state width="2539" height="233" key="GridCell.Tab.0.center" timestamp="1583538499507">
+      <screen x="0" y="0" width="2560" height="1400" />
+    </state>
+    <state width="2539" height="233" key="GridCell.Tab.0.center/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1583538499507" />
+    <state width="1419" height="35" key="GridCell.Tab.0.center/0.0.2560.1400/2560.0.1440.860@2560.0.1440.860" timestamp="1583537713840" />
+    <state width="2539" height="233" key="GridCell.Tab.0.left" timestamp="1583538499507">
+      <screen x="0" y="0" width="2560" height="1400" />
+    </state>
+    <state width="2539" height="233" key="GridCell.Tab.0.left/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1583538499507" />
+    <state width="1419" height="35" key="GridCell.Tab.0.left/0.0.2560.1400/2560.0.1440.860@2560.0.1440.860" timestamp="1583537713840" />
+    <state width="2539" height="233" key="GridCell.Tab.0.right" timestamp="1583538499507">
+      <screen x="0" y="0" width="2560" height="1400" />
+    </state>
+    <state width="2539" height="233" key="GridCell.Tab.0.right/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1583538499507" />
+    <state width="1419" height="35" key="GridCell.Tab.0.right/0.0.2560.1400/2560.0.1440.860@2560.0.1440.860" timestamp="1583537713840" />
+    <state x="781" y="343" key="SettingsEditor" timestamp="1583520647867">
+      <screen x="0" y="0" width="2560" height="1400" />
+    </state>
+    <state x="781" y="343" key="SettingsEditor/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1583520647867" />
+    <state x="65" y="0" width="2028" height="1402" key="dock-window-1" timestamp="1583523495809">
+      <screen x="0" y="0" width="2560" height="1400" />
+    </state>
+    <state x="65" y="0" width="2028" height="1402" key="dock-window-1/0.0.2560.1400/2560.0.1440.860@2560.0.1440.860" timestamp="1583523495809" />
+    <state x="654" y="540" width="1456" height="945" key="dock-window-2" timestamp="1583538199806">
+      <screen x="0" y="0" width="2560" height="1400" />
+    </state>
+    <state x="654" y="540" width="1456" height="945" key="dock-window-2/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1583538199806" />
+    <state x="2943" y="180" key="search.everywhere.popup" timestamp="1583520808535">
+      <screen x="2560" y="0" width="1440" height="860" />
+    </state>
+    <state x="2943" y="180" key="search.everywhere.popup/0.0.2560.1400/2560.0.1440.860@2560.0.1440.860" timestamp="1583520808535" />
+  </component>
+</project>
