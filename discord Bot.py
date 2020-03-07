@@ -87,9 +87,9 @@ class StreakBot(commands.Cog):
             thumbnail={
                 "url": "https://cdn4.iconfinder.com/data/icons/miscellaneous-icons-2-1/200/misc_movie_leaderboards3-512.png"},
             fields=[dict(name="**Users**", value=userNames, inline=True),
-                    dict(name="Streak Days", value=usersStreakDays, inline=True),
-                    dict(name="Total Messages Sent", value=usersTotalMessages, inline=True)],
-            footer=dict(text=f"Total Messages counted on {self.today}")
+                    dict(name="Streak Total", value=usersStreakDays, inline=True),
+                    dict(name="Total Words Sent", value=usersTotalMessages, inline=True)],
+            footer=dict(text=f"Total Words counted on {self.today}")
         )
         await ctx.channel.send(embed=discord.Embed.from_dict(embed))
 
@@ -122,7 +122,7 @@ class StreakBot(commands.Cog):
                 memberTotalMessage = streakData[guild][member][0]
 
                 # if the user has sent more than 20 words today
-                if memberTotalMessage >= 20:
+                if memberTotalMessage >= 100:
 
                     # reset their messages sent
                     streakData[guild][member][0] = 0
@@ -202,8 +202,50 @@ class StreakBot(commands.Cog):
         # update the data
         json.dump(streakData, open("streak.json", "w"))
 
+    @commands.command()
+    async def info(self, ctx):
+
+        # how many server the bot is in
+        totalGuilds = len(self.bot.guilds)
+
+        totalChannels = sum([len(guild.channels) for guild in self.bot.guilds])
+
+        latency = int(self.bot.latency * 100)
+
+        embed = dict(
+            title=f"**==DISCORD STREAK INFO==**",
+            color=9127187,
+            description =
+                          ":white_small_square: Minimum word count for streak is 100.\n"
+                          ":white_small_square: Streaks are reset/added at midnight GMT.\n"
+                          ":white_small_square: Streak will reset if you dont reach word count.\n"
+                          ,
+            thumbnail={
+                "url": "https://cdn3.iconfinder.com/data/icons/shopping-e-commerce-33/980/shopping-24-512.png"},
+            fields=[dict(name=f"**====================** \n"
+                              , value=f":book: Total Servers\n"
+                              f":book: Total Channels\n"
+                              f":book: My Connection\n"
+                         "====================", inline = True),
+
+
+                    dict(name="**====================**", value=f":white_small_square:    {totalGuilds}\n "
+                                              f":white_small_square:    {totalChannels}\n"
+                                              f":white_small_square:    {latency} ms\n"
+                                                          f"====================",
+                         inline=True),
+
+                    ],
+
+
+
+            footer=dict(text=f"HAPPY STREAKING!"),
+        )
+        await ctx.channel.send(embed=discord.Embed.from_dict(embed))
+
 
 if __name__ == "__main__":
     bot.add_cog(StreakBot(bot))
+    bot.remove_command("help")
 
     bot.run("")
