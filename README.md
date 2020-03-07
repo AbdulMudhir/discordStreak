@@ -8,6 +8,7 @@ Leaderboard will auto sort based on highest streaks
 supports multiple discord servers
 
 [invite link](https://discordapp.com/oauth2/authorize?client_id=685559923450445887&permissions=2048&scope=bot) if you want to add the bot to your server
+
 **!streak** only command you need to view scoreboard and the rest is taken care of
 **!info** to get summary of the rules and bot info
 
