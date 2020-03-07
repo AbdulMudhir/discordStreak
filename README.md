@@ -1,2 +1,4 @@
 # DiscordStreakBot
- gives a streak for how active a user is per day 
+Snapchat streak but for discord, keep users active by giving them a streak point each day if they send 100 messages or more
+
+[](https://i.imgur.com/4AtCyRX.png)
