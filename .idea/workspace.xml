@@ -1,10 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="7f1c6a87-755c-4365-9d49-4cad3961c86d" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/discord Bot.py" beforeDir="false" />
-    </list>
+    <list default="true" id="7f1c6a87-755c-4365-9d49-4cad3961c86d" name="Default Changelist" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -98,23 +95,31 @@
       <option name="project" value="LOCAL" />
       <updated>1583662898900</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="fixed issue with new servers joining">
+      <created>1583664657670</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1583664657670</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="added !info and removed !help to prevent other bot interfering" />
     <MESSAGE value="streaks are now given to you once you reach 100 words or more without waiting for midnight" />
-    <option name="LAST_COMMIT_MESSAGE" value="streaks are now given to you once you reach 100 words or more without waiting for midnight" />
+    <MESSAGE value="fixed issue with new servers joining" />
+    <option name="LAST_COMMIT_MESSAGE" value="fixed issue with new servers joining" />
   </component>
   <component name="WindowStateProjectService">
     <state x="734" y="356" width="1092" height="741" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1583520640708">
       <screen x="0" y="0" width="2560" height="1400" />
     </state>
     <state x="734" y="356" width="1092" height="741" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1583520640708" />
-    <state x="934" y="295" key="CommitChangelistDialog2" timestamp="1583662898068">
+    <state x="934" y="295" key="CommitChangelistDialog2" timestamp="1583664656450">
       <screen x="0" y="0" width="2560" height="1400" />
     </state>
-    <state x="934" y="295" key="CommitChangelistDialog2/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1583662898068" />
+    <state x="934" y="295" key="CommitChangelistDialog2/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1583664656450" />
     <state width="2539" height="233" key="GridCell.Tab.0.bottom" timestamp="1583663593190">
       <screen x="0" y="0" width="2560" height="1400" />
     </state>
@@ -139,10 +144,10 @@
       <screen x="0" y="0" width="2560" height="1400" />
     </state>
     <state x="781" y="343" key="SettingsEditor/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1583520647867" />
-    <state x="872" y="434" key="Vcs.Push.Dialog.v2" timestamp="1583662900512">
+    <state x="872" y="434" key="Vcs.Push.Dialog.v2" timestamp="1583664660011">
       <screen x="0" y="0" width="2560" height="1400" />
     </state>
-    <state x="872" y="434" key="Vcs.Push.Dialog.v2/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1583662900512" />
+    <state x="872" y="434" key="Vcs.Push.Dialog.v2/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1583664660011" />
     <state x="885" y="280" width="1456" height="714" key="dock-window-1" timestamp="1583662521134">
       <screen x="0" y="0" width="2560" height="1400" />
     </state>
