@@ -36,7 +36,7 @@ class StreakBot(commands.Cog):
                 if not member.bot:
                     # add those users into the system
                     # each member has total message, days of streak
-                    usersInCurrentGuild[guild.id].update({member.id: [0, 0]})
+                    usersInCurrentGuild[guild.id].update({member.id: [0, 0, False]})
                 else:
                     continue
 
@@ -49,9 +49,24 @@ class StreakBot(commands.Cog):
         messageLength = len(message.content.split())
         guildMessageFrom = str(message.guild.id)
 
-        # adding total total messages to the user
         if not user.bot:
+
+            # load the current users  total messages
+            currentUserTotalMessage = streakData[guildMessageFrom][userId][0]
+
+            # check if they had streaked already
+            streakedToday = streakData[guildMessageFrom][userId][2]
+
+            # adding total total messages to the user
             streakData[guildMessageFrom][userId][0] += messageLength
+
+            # if user has not been given a streak for today but has sent over 100 messages
+            if not streakedToday and currentUserTotalMessage >= 100:
+                # give the user a streak point
+                streakData[guildMessageFrom][userId][1] += 1
+
+                # change the boolean to True as they have received a streak for today
+                streakData[guildMessageFrom][userId][2] = True
 
     # streak commands
     @commands.command()
@@ -63,11 +78,13 @@ class StreakBot(commands.Cog):
         # retrieving the data for that guild
         streakUsersFromGuild = streakData[guildMessageFrom]
 
-        # obtain the users from that specific guilkd
+        # obtain the users from that specific guild
         usersID = streakUsersFromGuild.keys()
 
+        print(streakUsersFromGuild.values())
+
         # unpack the total messages, and streak days
-        totalMessages, streakDays = list(zip(*streakUsersFromGuild.values()))
+        totalMessages, streakDays, _ = list(zip(*streakUsersFromGuild.values()))
 
         # sorting the users based on the highest streak (will be changing to streak days)
         streakDays, usersID, totalMessages, = zip(*sorted(zip(streakDays, usersID, totalMessages, ), reverse=True))
@@ -76,7 +93,7 @@ class StreakBot(commands.Cog):
         userNames = "__\n__".join([self.bot.get_user(int(user)).name for user in usersID][0:25])
 
         # creating a String containing all the total messages
-        usersTotalMessages = "\n".join([str(total) for total in  totalMessages][0:25])
+        usersTotalMessages = "\n".join([str(total) for total in totalMessages][0:25])
 
         # creating a String containing all the streaks
         usersStreakDays = "\n".join([str(streak) for streak in streakDays][0:25])
@@ -94,7 +111,7 @@ class StreakBot(commands.Cog):
         await ctx.channel.send(embed=discord.Embed.from_dict(embed))
 
     # checking for the dates if its a new day
-    @tasks.loop(seconds=600)
+    @tasks.loop(minutes=5)
     async def dateCheck(self):
 
         currentDay = datetime.today().date().strftime("%d-%m-%Y")
@@ -107,15 +124,15 @@ class StreakBot(commands.Cog):
 
             print("New Day")
             time.sleep(5)
-            self.addStreaks()
+            self.checkStreaks()
 
     @staticmethod
-    def addStreaks():
+    def checkStreaks():
 
         # we will be looping through the servers to add or reset the streak
         for guild in streakData:
 
-            # check each members in th eguild
+            # check each members in the guild
             for member in streakData[guild]:
 
                 # retrieve total messages sent
@@ -127,8 +144,8 @@ class StreakBot(commands.Cog):
                     # reset their messages sent
                     streakData[guild][member][0] = 0
 
-                    # add a streak
-                    streakData[guild][member][1] += 1
+                    #  change streaked today to false as its a new day so no streak yet
+                    streakData[guild][member][2] = False
 
                 else:
                     # reset their messages sent
@@ -152,8 +169,6 @@ class StreakBot(commands.Cog):
             streakData[guildMemberJoined].update({str(member.id): [0, 0]})
 
         json.dump(streakData, open("streak.json", "w"))
-
-
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):
@@ -188,7 +203,6 @@ class StreakBot(commands.Cog):
 
         json.dump(streakData, open("streak.json", "w"))
 
-
     @commands.Cog.listener()
     async def on_guild_remove(self, guild):
 
@@ -215,33 +229,45 @@ class StreakBot(commands.Cog):
         embed = dict(
             title=f"**==DISCORD STREAK INFO==**",
             color=9127187,
-            description =
-                          ":white_small_square: Minimum word count for streak is 100.\n"
-                          ":white_small_square: Streaks are reset/added at midnight GMT.\n"
-                          ":white_small_square: Streak will reset if you dont reach word count.\n"
-                          ,
+            description=
+            ":white_small_square: Minimum word count for streak is 100.\n"
+            ":white_small_square: Streaks are reset/added at midnight GMT.\n"
+            ":white_small_square: Streak will reset if you dont reach word count.\n"
+            ,
             thumbnail={
                 "url": "https://cdn3.iconfinder.com/data/icons/shopping-e-commerce-33/980/shopping-24-512.png"},
             fields=[dict(name=f"**====================** \n"
-                              , value=f":book: Total Servers\n"
-                              f":book: Total Channels\n"
-                              f":book: My Connection\n"
-                         "====================", inline = True),
-
+                         , value=f":book: Total Servers\n"
+                                 f":book: Total Channels\n"
+                                 f":book: My Connection\n"
+                                 "====================", inline=True),
 
                     dict(name="**====================**", value=f":white_small_square:    {totalGuilds}\n "
-                                              f":white_small_square:    {totalChannels}\n"
-                                              f":white_small_square:    {latency} ms\n"
-                                                          f"====================",
+                                                                f":white_small_square:    {totalChannels}\n"
+                                                                f":white_small_square:    {latency} ms\n"
+                                                                f"====================",
                          inline=True),
 
                     ],
 
-
-
             footer=dict(text=f"HAPPY STREAKING!"),
         )
         await ctx.channel.send(embed=discord.Embed.from_dict(embed))
+
+
+    # this is only needed if you had the old system and need to add a third boolean
+
+    def addBoolean(self):
+
+        # we will be looping through the servers to add or reset the streak
+        for guild in streakData:
+
+            # check each members in the guild
+            for member in streakData[guild]:
+                streakData[guild][member].append(False)
+
+        # back up the file
+        json.dump(streakData, open("streak.json", "w"))
 
 
 if __name__ == "__main__":
