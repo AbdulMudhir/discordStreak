@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="7f1c6a87-755c-4365-9d49-4cad3961c86d" name="Default Changelist" comment="added !info">
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+    <list default="true" id="7f1c6a87-755c-4365-9d49-4cad3961c86d" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/discord Bot.py" beforeDir="false" afterPath="$PROJECT_DIR$/discord Bot.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/streak.json" beforeDir="false" afterPath="$PROJECT_DIR$/streak.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/discord Bot.py" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -93,50 +91,58 @@
       <option name="project" value="LOCAL" />
       <updated>1583591783473</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="streaks are now given to you once you reach 100 words or more without waiting for midnight">
+      <created>1583662898900</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1583662898900</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="added !info and removed !help to prevent other bot interfering" />
-    <option name="LAST_COMMIT_MESSAGE" value="added !info and removed !help to prevent other bot interfering" />
+    <MESSAGE value="streaks are now given to you once you reach 100 words or more without waiting for midnight" />
+    <option name="LAST_COMMIT_MESSAGE" value="streaks are now given to you once you reach 100 words or more without waiting for midnight" />
   </component>
   <component name="WindowStateProjectService">
     <state x="734" y="356" width="1092" height="741" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1583520640708">
       <screen x="0" y="0" width="2560" height="1400" />
     </state>
     <state x="734" y="356" width="1092" height="741" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1583520640708" />
-    <state x="934" y="295" key="CommitChangelistDialog2" timestamp="1583591782556">
+    <state x="934" y="295" key="CommitChangelistDialog2" timestamp="1583662898068">
       <screen x="0" y="0" width="2560" height="1400" />
     </state>
-    <state x="934" y="295" key="CommitChangelistDialog2/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1583591782556" />
-    <state width="2539" height="233" key="GridCell.Tab.0.bottom" timestamp="1583662714224">
+    <state x="934" y="295" key="CommitChangelistDialog2/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1583662898068" />
+    <state width="2539" height="233" key="GridCell.Tab.0.bottom" timestamp="1583663593190">
       <screen x="0" y="0" width="2560" height="1400" />
     </state>
-    <state width="2539" height="233" key="GridCell.Tab.0.bottom/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1583662714224" />
+    <state width="2539" height="233" key="GridCell.Tab.0.bottom/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1583663593190" />
     <state width="1419" height="35" key="GridCell.Tab.0.bottom/0.0.2560.1400/2560.0.1440.860@2560.0.1440.860" timestamp="1583537713840" />
-    <state width="2539" height="233" key="GridCell.Tab.0.center" timestamp="1583662714224">
+    <state width="2539" height="233" key="GridCell.Tab.0.center" timestamp="1583663593189">
       <screen x="0" y="0" width="2560" height="1400" />
     </state>
-    <state width="2539" height="233" key="GridCell.Tab.0.center/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1583662714224" />
+    <state width="2539" height="233" key="GridCell.Tab.0.center/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1583663593189" />
     <state width="1419" height="35" key="GridCell.Tab.0.center/0.0.2560.1400/2560.0.1440.860@2560.0.1440.860" timestamp="1583537713840" />
-    <state width="2539" height="233" key="GridCell.Tab.0.left" timestamp="1583662714224">
+    <state width="2539" height="233" key="GridCell.Tab.0.left" timestamp="1583663593189">
       <screen x="0" y="0" width="2560" height="1400" />
     </state>
-    <state width="2539" height="233" key="GridCell.Tab.0.left/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1583662714224" />
+    <state width="2539" height="233" key="GridCell.Tab.0.left/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1583663593189" />
     <state width="1419" height="35" key="GridCell.Tab.0.left/0.0.2560.1400/2560.0.1440.860@2560.0.1440.860" timestamp="1583537713840" />
-    <state width="2539" height="233" key="GridCell.Tab.0.right" timestamp="1583662714224">
+    <state width="2539" height="233" key="GridCell.Tab.0.right" timestamp="1583663593189">
       <screen x="0" y="0" width="2560" height="1400" />
     </state>
-    <state width="2539" height="233" key="GridCell.Tab.0.right/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1583662714224" />
+    <state width="2539" height="233" key="GridCell.Tab.0.right/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1583663593189" />
     <state width="1419" height="35" key="GridCell.Tab.0.right/0.0.2560.1400/2560.0.1440.860@2560.0.1440.860" timestamp="1583537713840" />
     <state x="781" y="343" key="SettingsEditor" timestamp="1583520647867">
       <screen x="0" y="0" width="2560" height="1400" />
     </state>
     <state x="781" y="343" key="SettingsEditor/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1583520647867" />
-    <state x="872" y="434" key="Vcs.Push.Dialog.v2" timestamp="1583591791568">
+    <state x="872" y="434" key="Vcs.Push.Dialog.v2" timestamp="1583662900512">
       <screen x="0" y="0" width="2560" height="1400" />
     </state>
-    <state x="872" y="434" key="Vcs.Push.Dialog.v2/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1583591791568" />
+    <state x="872" y="434" key="Vcs.Push.Dialog.v2/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1583662900512" />
     <state x="885" y="280" width="1456" height="714" key="dock-window-1" timestamp="1583662521134">
       <screen x="0" y="0" width="2560" height="1400" />
     </state>
