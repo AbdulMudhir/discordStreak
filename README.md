@@ -14,7 +14,7 @@ supports multiple discord servers
 **!info** to get summary of the rules and bot info
 
 
-![](https://i.imgur.com/4AtCyRX.png)
+![](https://i.imgur.com/FwIEvYK.png)
 
 ![](https://i.imgur.com/5C8Di2y.png)
 
