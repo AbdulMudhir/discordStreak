@@ -407,7 +407,7 @@ class StreakBot(commands.Cog):
 if __name__ == "__main__":
     bot.add_cog(StreakBot(bot))
     bot.remove_command("help")
-    bot.run("NjAyNDM5MTM0ODA3NTg4ODg1.XnPArg.p0TYD2n6-2JhT1sKbR7O21465as")
+    bot.run("")
 
 """
 Methods to update when changing Json
