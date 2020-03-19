@@ -25,8 +25,8 @@ class StreakBot(commands.Cog):
         print(f'We have logged in as {self.bot.user}\n')
         self.dateCheck.start()
 
-        # self.scanCurrentServer()
-        self.updateJson()
+    # self.scanCurrentServer()
+    # self.updateJson()
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -34,6 +34,9 @@ class StreakBot(commands.Cog):
         userId = str(message.author.id)
         messageLength = len(message.content.split())
         guildMessageFrom = str(message.guild.id)
+
+        # the threshold(total messages to achieve to streak) the guild has been set to
+        guildMessageThreshold = streakData[guildMessageFrom]["wordcount"]
 
         if not user.bot:
 
@@ -47,7 +50,7 @@ class StreakBot(commands.Cog):
             streakData[guildMessageFrom][userId][0] += messageLength
 
             # if user has not been given a streak for today but has sent over 100 messages
-            if not streakedToday and currentUserTotalMessage >= 100:
+            if not streakedToday and currentUserTotalMessage >= guildMessageThreshold:
                 # give the user a streak point
                 streakData[guildMessageFrom][userId][1] += 1
 
@@ -64,11 +67,14 @@ class StreakBot(commands.Cog):
         # retrieving the data for that guild
         streakUsersFromGuild = streakData[guildMessageFrom]
 
-        # obtain the users from that specific guild
-        usersID = list(streakUsersFromGuild.keys())
+        # obtain the users from that specific guild all the way from the end ignoring word count for guild
+        usersID = list(streakUsersFromGuild.keys())[:-1]
+
+        # obtain the users from that specific guild all the way from the end ignoring word count for guild
+        usersData = list(streakUsersFromGuild.values())[:-1]
 
         # unpack the total messages, and streak days
-        totalMessages, streakDays, *_ = list(zip(*streakUsersFromGuild.values()))
+        totalMessages, streakDays, *_ = list(zip(*usersData))
 
         # sorting the users based on the highest streak (will be changing to streak days)
         streakDays, usersID, totalMessages, = zip(*sorted(zip(streakDays, usersID, totalMessages, ), reverse=True))
@@ -236,12 +242,17 @@ class StreakBot(commands.Cog):
 
         latency = int(self.bot.latency * 100)
 
+        guildMessageFrom = str(ctx.guild.id)
+
+        # the threshold(total messages to achieve to streak) the guild has been set to
+        guildMessageThreshold = streakData[guildMessageFrom]["wordcount"]
+
         self.embed = dict(
             title=f"**==DISCORD STREAK INFO==**",
             color=9127187,
             description=
-            ":white_small_square: Minimum word count for streak is 100.\n"
-            ":white_small_square: Streaks are added when you reach 100 words or more.\n"
+            f":white_small_square: Minimum word count for streak is {guildMessageThreshold}.\n"
+            f":white_small_square: Streaks are added when you reach {guildMessageThreshold} words or more.\n"
             ":white_small_square: Streak will reset at midnight GMT failure to meet word count.\n"
             ,
             thumbnail={
@@ -277,7 +288,7 @@ class StreakBot(commands.Cog):
         streakUsersFromGuild = streakData[guildMessageFrom]
 
         # unpack the user's data
-        userTotalStreak, userTotalMessages, *_ = streakUsersFromGuild[str(ctx.author.id)]
+        userTotalMessages, userTotalStreak, *_ = streakUsersFromGuild[str(ctx.author.id)]
 
         # adding emotes based on different stages of streak
         # if user has reached 3 or more streak day they get fire streak
@@ -355,12 +366,14 @@ class StreakBot(commands.Cog):
         guildOwnerId = ctx.guild.owner_id
         currentUserId = ctx.author.id
         guildMessageFrom = str(ctx.guild.id)
+        newThresholdCounter = int(total)
 
         # if it is not the guild owner ignore | only guild owner can set threshold
         if currentUserId == guildOwnerId:
-            t = streakData[guildMessageFrom]["wordcount"]
+            newThreshold = streakData[guildMessageFrom]["wordcount"] = newThresholdCounter
 
-            print(t)
+            json.dump(streakData, open("streak.json", "w"))
+            await ctx.channel.send(f"New message threshold has been set for the server to {newThresholdCounter}")
 
     # this is only needed if you had the old system and need to add extra info
 
@@ -399,6 +412,11 @@ class StreakBot(commands.Cog):
                 if not member.bot:
                     # add those users into the system
                     # each member has total message, days of streak
+
+                    newDataSet = {"highestStreak": 0,
+                                  "lastStreakDay": 0,
+                                  "highestMessageCount": 0}
+
                     usersInCurrentGuild[guild.id].update({member.id: [0, 0, False]})
 
         json.dump(usersInCurrentGuild, open("streak.json", "w"))
