@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="7f1c6a87-755c-4365-9d49-4cad3961c86d" name="Default Changelist" comment="" />
+    <list default="true" id="7f1c6a87-755c-4365-9d49-4cad3961c86d" name="Default Changelist" comment="fixed issue with new servers joining">
+      <change afterPath="$PROJECT_DIR$/.idea/dictionaries/Abdul.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/streak.json" beforeDir="false" afterPath="$PROJECT_DIR$/streak.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/streakbot.py" beforeDir="false" afterPath="$PROJECT_DIR$/streakbot.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -27,10 +32,11 @@
   <component name="PropertiesComponent">
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../Corey tutorial django" />
     <property name="restartRequiresConfirmation" value="false" />
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Python.streakbot">
     <configuration name="discord Bot" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="discordStreak" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -52,8 +58,30 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="streakbot" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="discordStreak" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/streakbot.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.streakbot" />
         <item itemvalue="Python.discord Bot" />
       </list>
     </recent_temporary>
@@ -116,29 +144,33 @@
       <screen x="0" y="0" width="2560" height="1400" />
     </state>
     <state x="734" y="356" width="1092" height="741" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1583520640708" />
-    <state x="934" y="295" key="CommitChangelistDialog2" timestamp="1583664656450">
+    <state x="934" y="295" key="CommitChangelistDialog2" timestamp="1584575780381">
       <screen x="0" y="0" width="2560" height="1400" />
     </state>
-    <state x="934" y="295" key="CommitChangelistDialog2/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1583664656450" />
-    <state width="2539" height="233" key="GridCell.Tab.0.bottom" timestamp="1583663593190">
+    <state x="934" y="295" key="CommitChangelistDialog2/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1584575780381" />
+    <state x="1237" y="912" key="FileChooserDialogImpl" timestamp="1584040755342">
       <screen x="0" y="0" width="2560" height="1400" />
     </state>
-    <state width="2539" height="233" key="GridCell.Tab.0.bottom/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1583663593190" />
+    <state x="1237" y="912" key="FileChooserDialogImpl/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1584040755342" />
+    <state width="2539" height="233" key="GridCell.Tab.0.bottom" timestamp="1584576019781">
+      <screen x="0" y="0" width="2560" height="1400" />
+    </state>
+    <state width="2539" height="233" key="GridCell.Tab.0.bottom/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1584576019781" />
     <state width="1419" height="35" key="GridCell.Tab.0.bottom/0.0.2560.1400/2560.0.1440.860@2560.0.1440.860" timestamp="1583537713840" />
-    <state width="2539" height="233" key="GridCell.Tab.0.center" timestamp="1583663593189">
+    <state width="2539" height="233" key="GridCell.Tab.0.center" timestamp="1584576019781">
       <screen x="0" y="0" width="2560" height="1400" />
     </state>
-    <state width="2539" height="233" key="GridCell.Tab.0.center/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1583663593189" />
+    <state width="2539" height="233" key="GridCell.Tab.0.center/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1584576019781" />
     <state width="1419" height="35" key="GridCell.Tab.0.center/0.0.2560.1400/2560.0.1440.860@2560.0.1440.860" timestamp="1583537713840" />
-    <state width="2539" height="233" key="GridCell.Tab.0.left" timestamp="1583663593189">
+    <state width="2539" height="233" key="GridCell.Tab.0.left" timestamp="1584576019781">
       <screen x="0" y="0" width="2560" height="1400" />
     </state>
-    <state width="2539" height="233" key="GridCell.Tab.0.left/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1583663593189" />
+    <state width="2539" height="233" key="GridCell.Tab.0.left/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1584576019781" />
     <state width="1419" height="35" key="GridCell.Tab.0.left/0.0.2560.1400/2560.0.1440.860@2560.0.1440.860" timestamp="1583537713840" />
-    <state width="2539" height="233" key="GridCell.Tab.0.right" timestamp="1583663593189">
+    <state width="2539" height="233" key="GridCell.Tab.0.right" timestamp="1584576019781">
       <screen x="0" y="0" width="2560" height="1400" />
     </state>
-    <state width="2539" height="233" key="GridCell.Tab.0.right/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1583663593189" />
+    <state width="2539" height="233" key="GridCell.Tab.0.right/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1584576019781" />
     <state width="1419" height="35" key="GridCell.Tab.0.right/0.0.2560.1400/2560.0.1440.860@2560.0.1440.860" timestamp="1583537713840" />
     <state x="781" y="343" key="SettingsEditor" timestamp="1583520647867">
       <screen x="0" y="0" width="2560" height="1400" />

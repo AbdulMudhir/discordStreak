@@ -5,7 +5,7 @@ from discord.ext import tasks
 from datetime import datetime
 import time
 
-bot = commands.Bot(command_prefix='!')
+bot = commands.Bot(command_prefix='$')
 
 usersInCurrentGuild = {}
 
@@ -24,23 +24,23 @@ class StreakBot(commands.Cog):
         print(f'We have logged in as {self.bot.user}\n')
         self.dateCheck.start()
 
-        # scanning al the guild the bot is currently in and return their ID
-        for guild in self.bot.guilds:
-
-            # create a list to hold each users for different guild
-            usersInCurrentGuild[guild.id] = {}
-
-            for member in guild.members:
-
-                # checking if the user is a bot as we wont be tracking the bots
-                if not member.bot:
-                    # add those users into the system
-                    # each member has total message, days of streak
-                    usersInCurrentGuild[guild.id].update({member.id: [0, 0, False]})
-                else:
-                    continue
-
-        json.dump(usersInCurrentGuild, open("streak.json", "w"))
+        # # scanning al the guild the bot is currently in and return their ID
+        # for guild in self.bot.guilds:
+        #
+        #     # create a list to hold each users for different guild
+        #     usersInCurrentGuild[guild.id] = {}
+        #
+        #     for member in guild.members:
+        #
+        #         # checking if the user is a bot as we wont be tracking the bots
+        #         if not member.bot:
+        #             # add those users into the system
+        #             # each member has total message, days of streak
+        #             usersInCurrentGuild[guild.id].update({member.id: [0, 0, False]})
+        #         else:
+        #             continue
+        #
+        # json.dump(usersInCurrentGuild, open("streak.json", "w"))
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -267,6 +267,69 @@ class StreakBot(commands.Cog):
 
         # back up the file
         json.dump(streakData, open("streak.json", "w"))
+
+    @commands.command()
+    async def streakme(self, ctx):
+
+        # getting the guild the message was sent from
+        guildMessageFrom = str(ctx.guild.id)
+
+        # the user's Name
+        userName = ctx.author
+
+        # retrieving the data for that guild
+        streakUsersFromGuild = streakData[guildMessageFrom]
+
+        # unpack the user's data
+        userTotalStreak,userTotalMessages,_ = streakUsersFromGuild[str(ctx.author.id)]
+
+        # adding emotes based on different stages of streak
+        # if user has reached 3 or more streak day they get fire streak
+        if userTotalStreak >= 3:
+
+            userStreakFormat = f"{userTotalStreak} :fire:"
+
+            #  if user reached over 100 streaks they get #100 emote
+            if userTotalStreak >= 100:
+                userStreakFormat = f"{userTotalStreak} :fire: :100: "
+
+        else:
+            userStreakFormat = userTotalStreak
+
+        streakClaimedMessage = "You have claimed your streak for today"
+
+        footerMessage = streakClaimedMessage if userTotalMessages >=  100 else f"Words count left till streak {100 - userTotalMessages}"
+
+        userTotalMessages = userTotalMessages if userTotalMessages < 100 else f"{userTotalMessages} "
+
+
+
+        embed = dict(
+            title=f"**=={userName} Profile Streak==**",
+            color=9127187,
+            thumbnail = {"url": f"{ctx.author.avatar_url}"},
+            fields=[
+                dict(name="Word Count", value=userTotalMessages, inline=True),
+                    dict(name="Streak Total", value=userStreakFormat, inline=True),
+                dict(name="Last Streak", value=f"{self.today}", inline=True),
+
+                    ],
+
+            # footer
+            footer=dict(text=f"You have claimed your streak for today"),
+
+
+        )
+        await ctx.channel.send(embed=discord.Embed.from_dict(embed))
+
+    # will be used for debugging when need to make changes
+    @commands.command()
+    async def updateData(self, ctx):
+        if ctx.author.id == 125604422007914497:
+            json.dump(streakData, open("streak.json", "w"))
+            await ctx.channel.send("Database has been backed up")
+
+
 
 
 if __name__ == "__main__":
