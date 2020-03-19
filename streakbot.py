@@ -94,8 +94,23 @@ class StreakBot(commands.Cog):
         # creating a String containing all the total messages
         usersTotalMessages = "\n".join([str(total) for total in totalMessages[0:25]])
 
-        # creating a String containing all the streaks
-        usersStreakDays = "\n".join([str(streak) for streak in streakDays[0:25]])
+        # # creating a String containing all the streaks
+        # usersStreakDays = "\n".join([str(streak) for streak in streakDays[0:25]])
+
+
+        usersStreakDays = []
+
+        for streak in streakDays[0:25]:
+            if 3 <= streak < 100:
+                usersStreakDays.append(f"{streak} :fire:")
+
+            elif streak >= 100:
+                usersStreakDays.append(f"{streak} :fire: :100: ")
+
+            else:
+                usersStreakDays.append(str(streak))
+
+        usersStreakDays  = "\n".join(usersStreakDays)
 
         embed = dict(
             title=f"**==STREAK LEADERBOARD==**",
@@ -305,7 +320,7 @@ class StreakBot(commands.Cog):
 
 
         embed = dict(
-            title=f"**=={userName} Profile Streak==**",
+            title=f"**==Profile {userName} Streak==**",
             color=9127187,
             thumbnail = {"url": f"{ctx.author.avatar_url}"},
             fields=[
