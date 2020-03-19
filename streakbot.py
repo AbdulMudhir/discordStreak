@@ -26,7 +26,7 @@ class StreakBot(commands.Cog):
         self.dateCheck.start()
 
     #   self.scanCurrentServer()
-        #self.updateJson()
+    # self.updateJson()
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -59,60 +59,90 @@ class StreakBot(commands.Cog):
 
     # streak commands
     @commands.command()
-    async def streak(self, ctx):
+    async def streak(self, ctx, *args):
 
         # getting the guild the message was sent from
         guildMessageFrom = str(ctx.guild.id)
 
-        # retrieving the data for that guild
-        streakUsersFromGuild = streakData[guildMessageFrom]
 
-        # obtain the users from that specific guild all the way from the end ignoring word count for guild
-        usersID = list(streakUsersFromGuild.keys())[:-1]
 
-        # obtain the users from that specific guild all the way from the end ignoring word count for guild
-        usersData = list(streakUsersFromGuild.values())[:-1]
+        # check if user has mentioned someone
+        mention = ctx.message.mentions
 
-        # unpack the total messages, and streak days
-        totalMessages, streakDays, *_ = list(zip(*usersData))
+        # get the first word this will be used for $streak me to retrieve current user's streak
+        otherMessage = args
 
-        # sorting the users based on the highest streak (will be changing to streak days)
-        streakDays, usersID, totalMessages, = zip(*sorted(zip(streakDays, usersID, totalMessages, ), reverse=True))
 
-        # converting the id to their Original Names
-        userNames = "__\n__".join([self.bot.get_user(int(user)).name for user in usersID[0:25]])
+        # if user has mentioned someone return the first mention in case they mentioned more than once
+        if mention:
+            # get the user that was mention
+            userMentioned = mention[0]
+            # check if the user mentioned is a bot other wise cancel
+            if not mention[0].bot:
+                # send the information over to another method to send an embed for that user
+                # passing over ctx to send message to the channel
+                await self.mentionStreak(ctx, userMentioned, guildMessageFrom)
 
-        # creating a String containing all the total messages
-        usersTotalMessages = "\n".join([str(total) for total in totalMessages[0:25]])
+        # check if there's any other messages that were sent
+        elif otherMessage:
 
-        # # creating a String containing all the streaks
-        # usersStreakDays = "\n".join([str(streak) for streak in streakDays[0:25]])
+            # get the first word that was mentioned
+            otherMessage = args[0]
 
-        usersStreakDays = []
+            if otherMessage == "me":
+                await self.mentionStreak(ctx, ctx.author, guildMessageFrom)
 
-        for streak in streakDays[0:25]:
-            if 3 <= streak < 100:
-                usersStreakDays.append(f"{streak} :fire:")
 
-            elif streak >= 100:
-                usersStreakDays.append(f"{streak} :fire: :100: ")
+        else:
+            # retrieving the data for that guild
+            streakUsersFromGuild = streakData[guildMessageFrom]
 
-            else:
-                usersStreakDays.append(str(streak))
+            # obtain the users from that specific guild all the way from the end ignoring word count for guild
+            usersID = list(streakUsersFromGuild.keys())[:-1]
 
-        usersStreakDays = "\n".join(usersStreakDays)
+            # obtain the users from that specific guild all the way from the end ignoring word count for guild
+            usersData = list(streakUsersFromGuild.values())[:-1]
 
-        self.embed = dict(
-            title=f"**==STREAK LEADERBOARD==**",
-            color=9127187,
-            thumbnail={
-                "url": "https://cdn4.iconfinder.com/data/icons/miscellaneous-icons-2-1/200/misc_movie_leaderboards3-512.png"},
-            fields=[dict(name="**Users**", value=userNames, inline=True),
-                    dict(name="Streak Total", value=usersStreakDays, inline=True),
-                    dict(name="Total Words Sent", value=usersTotalMessages, inline=True)],
-            footer=dict(text=f"Total Words counted on {self.today}")
-        )
-        await ctx.channel.send(embed=discord.Embed.from_dict(self.embed))
+            # unpack the total messages, and streak days
+            totalMessages, streakDays, *_ = list(zip(*usersData))
+
+            # sorting the users based on the highest streak (will be changing to streak days)
+            streakDays, usersID, totalMessages, = zip(*sorted(zip(streakDays, usersID, totalMessages, ), reverse=True))
+
+            # converting the id to their Original Names
+            userNames = "__\n__".join([self.bot.get_user(int(user)).name for user in usersID[0:25]])
+
+            # creating a String containing all the total messages
+            usersTotalMessages = "\n".join([str(total) for total in totalMessages[0:25]])
+
+            # # creating a String containing all the streaks
+            # usersStreakDays = "\n".join([str(streak) for streak in streakDays[0:25]])
+
+            usersStreakDays = []
+
+            for streak in streakDays[0:25]:
+                if 3 <= streak < 100:
+                    usersStreakDays.append(f"{streak} :fire:")
+
+                elif streak >= 100:
+                    usersStreakDays.append(f"{streak} :fire: :100: ")
+
+                else:
+                    usersStreakDays.append(str(streak))
+
+            usersStreakDays = "\n".join(usersStreakDays)
+
+            self.embed = dict(
+                title=f"**==STREAK LEADERBOARD==**",
+                color=9127187,
+                thumbnail={
+                    "url": "https://cdn4.iconfinder.com/data/icons/miscellaneous-icons-2-1/200/misc_movie_leaderboards3-512.png"},
+                fields=[dict(name="**Users**", value=userNames, inline=True),
+                        dict(name="Streak Total", value=usersStreakDays, inline=True),
+                        dict(name="Total Words Sent", value=usersTotalMessages, inline=True)],
+                footer=dict(text=f"Total Words counted on {self.today}")
+            )
+            await ctx.channel.send(embed=discord.Embed.from_dict(self.embed))
 
     # checking for the dates if its a new day
     @tasks.loop(minutes=5)
@@ -275,20 +305,16 @@ class StreakBot(commands.Cog):
         )
         await ctx.channel.send(embed=discord.Embed.from_dict(self.embed))
 
-    @commands.command()
-    async def streakme(self, ctx):
-
-        # getting the guild the message was sent from
-        guildMessageFrom = str(ctx.guild.id)
-
-        # the user's Name
-        userName = ctx.author
+    async def mentionStreak(self, ctx, user, guildID):
 
         # retrieving the data for that guild
-        streakUsersFromGuild = streakData[guildMessageFrom]
+        streakUsersFromGuild = streakData[guildID]
+
+        # the user's Name
+        userName = user.name
 
         # unpack the user's data
-        userTotalMessages, userTotalStreak, *_ = streakUsersFromGuild[str(ctx.author.id)]
+        userTotalMessages, userTotalStreak, *_ = streakUsersFromGuild[str(user.id)]
 
         # adding emotes based on different stages of streak
         # if user has reached 3 or more streak day they get fire streak
@@ -314,7 +340,7 @@ class StreakBot(commands.Cog):
         self.embed = dict(
             title=f"**== {userName} ==**",
             color=9127187,
-            thumbnail={"url": f"{ctx.author.avatar_url}"},
+            thumbnail={"url": f"{user.avatar_url}"},
             fields=[
                 dict(name="Word Count", value=userTotalMessages, inline=True),
                 dict(name="Current Streak", value=userStreakFormat, inline=True),
@@ -434,8 +460,6 @@ class StreakBot(commands.Cog):
             streakData[guildMessageFrom][mentionedUserID][1] += int(totalStreak)
 
             await ctx.channel.send(f"{mentionedUser} has been given {totalStreak} streaks")
-
-
 
 
 if __name__ == "__main__":
