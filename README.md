@@ -1,6 +1,9 @@
 # DiscordStreakBot
 
 
+**Any features request please DM hunter#2950**
+
+
 Snapchat streak but for discord, keep users active by giving them a streak point each day if they send 100 words or more. Streaks are reset if user fails to meet the minimum words count
 
 Leaderboard will auto sort based on highest streaks
@@ -14,8 +17,8 @@ supports multiple discord servers
 **!info** to get summary of the rules and bot info
 
 
-![](https://i.imgur.com/4AtCyRX.png)
+![](https://i.imgur.com/FwIEvYK.png)
 
-![](https://i.imgur.com/5C8Di2y.png)
+![](https://i.imgur.com/FGWGcG6.png)
 
 
