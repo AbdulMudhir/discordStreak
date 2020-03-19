@@ -25,8 +25,8 @@ class StreakBot(commands.Cog):
         print(f'We have logged in as {self.bot.user}\n')
         self.dateCheck.start()
 
-    # self.scanCurrentServer()
-    # self.updateJson()
+    #   self.scanCurrentServer()
+        #self.updateJson()
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -417,15 +417,31 @@ class StreakBot(commands.Cog):
                                   "lastStreakDay": 0,
                                   "highestMessageCount": 0}
 
-                    usersInCurrentGuild[guild.id].update({member.id: [0, 0, False]})
+                    usersInCurrentGuild[guild.id].update({member.id: [0, 0, False, newDataSet]})
 
         json.dump(usersInCurrentGuild, open("streak.json", "w"))
+
+    # this is only for debugging not to be used for implementation
+    @commands.command()
+    async def givestreak(self, ctx, totalStreak):
+
+        guildMessageFrom = str(ctx.guild.id)
+
+        if ctx.author.id == 125604422007914497:
+            mentionedUser = ctx.message.mentions[0].name
+            mentionedUserID = str(ctx.message.mentions[0].id)
+            # give the user a streak point
+            streakData[guildMessageFrom][mentionedUserID][1] += int(totalStreak)
+
+            await ctx.channel.send(f"{mentionedUser} has been given {totalStreak} streaks")
+
+
 
 
 if __name__ == "__main__":
     bot.add_cog(StreakBot(bot))
     bot.remove_command("help")
-    bot.run("")
+    bot.run("NjAyNDM5MTM0ODA3NTg4ODg1.XnPluA.hwerYdLs0QA669ceCBvIz_6dqJI")
 
 """
 Methods to update when changing Json
