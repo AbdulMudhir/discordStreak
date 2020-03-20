@@ -25,8 +25,8 @@ class StreakBot(commands.Cog):
         print(f'We have logged in as {self.bot.user}\n')
         self.dateCheck.start()
 
-        #self.scanCurrentServer()
-        self.updateJson()
+        # self.scanCurrentServer()
+        #self.updateJson()
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -42,8 +42,7 @@ class StreakBot(commands.Cog):
             # if the user is not a bot we will add a streak (only if they meet the criteria)
             self.addUserStreak(userId, guildMessageFrom, messageLength, guildMessageThreshold)
 
-    @staticmethod
-    def addUserStreak(userId, guildMessageFrom, messageLength, guildMessageThreshold):
+    def addUserStreak(self, userId, guildMessageFrom, messageLength, guildMessageThreshold):
 
         # load the current users  total messages
         currentUserTotalMessage = streakData[guildMessageFrom][userId][0]
@@ -59,8 +58,17 @@ class StreakBot(commands.Cog):
             # give the user a streak point
             streakData[guildMessageFrom][userId][1] += 1
 
+            streakData[guildMessageFrom][userId][3]['lastStreakDay'] = self.today
+
+            userHighestStreak= streakData[guildMessageFrom][userId][3]["highestStreak"]
+            userCurrentStreak = streakData[guildMessageFrom][userId][1]
+
             # change the boolean to True as they have received a streak for today
             streakData[guildMessageFrom][userId][2] = True
+
+            if userCurrentStreak >= userHighestStreak:
+                streakData[guildMessageFrom][userId][3]["highestStreak"] = userCurrentStreak
+
 
     # streak commands
     @commands.command()
@@ -105,7 +113,6 @@ class StreakBot(commands.Cog):
             # obtain the users from that specific guild all the way from the end ignoring word count for guild
             usersData = list(streakUsersFromGuild.values())[:-1]
 
-            print(usersData)
             # unpack the total messages, and streak days
             totalMessages, streakDays, *_ = list(zip(*usersData))
 
@@ -439,7 +446,6 @@ class StreakBot(commands.Cog):
                         # if the index does not exist mean no stats available
                         memberInfo.append(newDataSet)
 
-
         json.dump(streakData, open("streak.json", "w"))
 
     # would be used if hosting bot yourself
@@ -462,10 +468,10 @@ class StreakBot(commands.Cog):
                                   "lastStreakDay": "Never Streaked",
                                   "highestMessageCount": 0}
 
-                    usersInCurrentGuild[guild.id].update({member.id: [0, 0, False]})
+                    usersInCurrentGuild[guild.id].update({member.id: [0, 0, False, newDataSet]})
 
+            # add word count for the server
             usersInCurrentGuild[guild.id].update({"wordcount": 100})
-
 
         json.dump(usersInCurrentGuild, open("streak.json", "w"))
 
