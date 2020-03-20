@@ -20,5 +20,6 @@ supports multiple discord servers
 ![](https://i.imgur.com/FwIEvYK.png)
 
 ![](https://i.imgur.com/FGWGcG6.png)
-![](https://i.imgur.com/z8PQpOg.png)
+![](https://i.imgur.com/eDu0kGL.png
+)
 
