@@ -3,6 +3,7 @@
   <component name="ChangeListManager">
     <list default="true" id="7f1c6a87-755c-4365-9d49-4cad3961c86d" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/streak.json" beforeDir="false" afterPath="$PROJECT_DIR$/streak.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/streakbot.py" beforeDir="false" afterPath="$PROJECT_DIR$/streakbot.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -177,7 +178,14 @@
       <option name="project" value="LOCAL" />
       <updated>1584657207598</updated>
     </task>
-    <option name="localTasksCounter" value="11" />
+    <task id="LOCAL-00011" summary="added ability to mention someone to get their streak">
+      <created>1584659016493</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1584659016493</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -190,49 +198,50 @@
     <MESSAGE value="fixed streak command" />
     <MESSAGE value="added debug feature to give streaks" />
     <MESSAGE value="removed old bot key" />
-    <option name="LAST_COMMIT_MESSAGE" value="removed old bot key" />
+    <MESSAGE value="added ability to mention someone to get their streak" />
+    <option name="LAST_COMMIT_MESSAGE" value="added ability to mention someone to get their streak" />
   </component>
   <component name="WindowStateProjectService">
     <state x="734" y="356" width="1092" height="741" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1583520640708">
       <screen x="0" y="0" width="2560" height="1400" />
     </state>
     <state x="734" y="356" width="1092" height="741" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1583520640708" />
-    <state x="934" y="295" key="CommitChangelistDialog2" timestamp="1584657206775">
+    <state x="934" y="295" key="CommitChangelistDialog2" timestamp="1584659015703">
       <screen x="0" y="0" width="2560" height="1400" />
     </state>
-    <state x="934" y="295" key="CommitChangelistDialog2/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1584657206775" />
+    <state x="934" y="295" key="CommitChangelistDialog2/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1584659015703" />
     <state x="1237" y="912" key="FileChooserDialogImpl" timestamp="1584040755342">
       <screen x="0" y="0" width="2560" height="1400" />
     </state>
     <state x="1237" y="912" key="FileChooserDialogImpl/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1584040755342" />
-    <state width="2304" height="233" key="GridCell.Tab.0.bottom" timestamp="1584658963164">
+    <state width="2304" height="233" key="GridCell.Tab.0.bottom" timestamp="1584663422784">
       <screen x="0" y="0" width="2560" height="1400" />
     </state>
-    <state width="2304" height="233" key="GridCell.Tab.0.bottom/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1584658963164" />
+    <state width="2304" height="233" key="GridCell.Tab.0.bottom/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1584663422784" />
     <state width="1419" height="35" key="GridCell.Tab.0.bottom/0.0.2560.1400/2560.0.1440.860@2560.0.1440.860" timestamp="1583537713840" />
-    <state width="2304" height="233" key="GridCell.Tab.0.center" timestamp="1584658963164">
+    <state width="2304" height="233" key="GridCell.Tab.0.center" timestamp="1584663422784">
       <screen x="0" y="0" width="2560" height="1400" />
     </state>
-    <state width="2304" height="233" key="GridCell.Tab.0.center/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1584658963164" />
+    <state width="2304" height="233" key="GridCell.Tab.0.center/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1584663422784" />
     <state width="1419" height="35" key="GridCell.Tab.0.center/0.0.2560.1400/2560.0.1440.860@2560.0.1440.860" timestamp="1583537713840" />
-    <state width="2304" height="233" key="GridCell.Tab.0.left" timestamp="1584658963164">
+    <state width="2304" height="233" key="GridCell.Tab.0.left" timestamp="1584663422784">
       <screen x="0" y="0" width="2560" height="1400" />
     </state>
-    <state width="2304" height="233" key="GridCell.Tab.0.left/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1584658963164" />
+    <state width="2304" height="233" key="GridCell.Tab.0.left/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1584663422784" />
     <state width="1419" height="35" key="GridCell.Tab.0.left/0.0.2560.1400/2560.0.1440.860@2560.0.1440.860" timestamp="1583537713840" />
-    <state width="2304" height="233" key="GridCell.Tab.0.right" timestamp="1584658963164">
+    <state width="2304" height="233" key="GridCell.Tab.0.right" timestamp="1584663422784">
       <screen x="0" y="0" width="2560" height="1400" />
     </state>
-    <state width="2304" height="233" key="GridCell.Tab.0.right/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1584658963164" />
+    <state width="2304" height="233" key="GridCell.Tab.0.right/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1584663422784" />
     <state width="1419" height="35" key="GridCell.Tab.0.right/0.0.2560.1400/2560.0.1440.860@2560.0.1440.860" timestamp="1583537713840" />
     <state x="781" y="343" key="SettingsEditor" timestamp="1583520647867">
       <screen x="0" y="0" width="2560" height="1400" />
     </state>
     <state x="781" y="343" key="SettingsEditor/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1583520647867" />
-    <state x="872" y="434" key="Vcs.Push.Dialog.v2" timestamp="1584657215273">
+    <state x="872" y="434" key="Vcs.Push.Dialog.v2" timestamp="1584659017816">
       <screen x="0" y="0" width="2560" height="1400" />
     </state>
-    <state x="872" y="434" key="Vcs.Push.Dialog.v2/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1584657215273" />
+    <state x="872" y="434" key="Vcs.Push.Dialog.v2/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1584659017816" />
     <state x="885" y="280" width="1456" height="714" key="dock-window-1" timestamp="1583662521134">
       <screen x="0" y="0" width="2560" height="1400" />
     </state>
