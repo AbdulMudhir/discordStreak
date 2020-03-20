@@ -36,12 +36,11 @@ class StreakBot(commands.Cog):
         guildMessageFrom = str(message.guild.id)
 
         # the threshold(total messages to achieve to streak) the guild has been set to
-        guildMessageThreshold = streakData[guildMessageFrom]["wordcount"]
+        guildMessageThreshold = streakData[guildMessageFrom]['serverInfo']["wordcount"]
 
         if not user.bot:
             # if the user is not a bot we will add a streak (only if they meet the criteria)
             self.addUserStreak(userId, guildMessageFrom, messageLength, guildMessageThreshold)
-
 
     def addUserStreak(self, userId, guildMessageFrom, messageLength, guildMessageThreshold):
 
@@ -75,8 +74,6 @@ class StreakBot(commands.Cog):
             if userCurrentStreak >= userHighestStreak:
                 # if current streak is higher than highest streak then we set highest streak to current streak
                 streakData[guildMessageFrom][userId][3]["highestStreak"] = userCurrentStreak
-
-
 
     # streak commands
     @commands.command()
@@ -121,6 +118,7 @@ class StreakBot(commands.Cog):
             # obtain the users from that specific guild all the way from the end ignoring word count for guild
             usersData = list(streakUsersFromGuild.values())[:-1]
 
+
             # unpack the total messages, and streak days
             totalMessages, streakDays, *_ = list(zip(*usersData))
 
@@ -133,22 +131,22 @@ class StreakBot(commands.Cog):
             # creating a String containing all the total messages
             usersTotalMessages = "\n".join([str(total) for total in totalMessages[0:25]])
 
-            # # creating a String containing all the streaks
-            # usersStreakDays = "\n".join([str(streak) for streak in streakDays[0:25]])
+            # creating a String containing all the streaks
+            usersStreakDays = "\n".join([str(streak) for streak in streakDays[0:25]])
 
-            usersStreakDays = []
-
-            for streak in streakDays[0:25]:
-                if 3 <= streak < 100:
-                    usersStreakDays.append(f"{streak} :fire:")
-
-                elif streak >= 100:
-                    usersStreakDays.append(f"{streak} :fire: :100: ")
-
-                else:
-                    usersStreakDays.append(str(streak))
-
-            usersStreakDays = "\n".join(usersStreakDays)
+            # usersStreakDays = []
+            #
+            # for streak in streakDays[0:25]:
+            #     if 3 <= streak < 100:
+            #         usersStreakDays.append(f"{streak} :fire:")
+            #
+            #     elif streak >= 100:
+            #         usersStreakDays.append(f"{streak} :fire: :100: ")
+            #
+            #     else:
+            #         usersStreakDays.append(str(streak))
+            #
+            # usersStreakDays = "\n".join(usersStreakDays)
 
             self.embed = dict(
                 title=f"**==STREAK LEADERBOARD==**",
@@ -224,7 +222,6 @@ class StreakBot(commands.Cog):
 
             streakData[guildMemberJoined].update({str(member.id): [0, 0, False, extraInfo]})
 
-        json.dump(streakData, open("streak.json", "w"))
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):
@@ -237,7 +234,6 @@ class StreakBot(commands.Cog):
         if not member.bot:
             streakData[guildMemberJoined].pop(str(member.id))
 
-        json.dump(streakData, open("streak.json", "w"))
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
@@ -246,8 +242,14 @@ class StreakBot(commands.Cog):
 
         guildId = str(guild.id)
 
+        serverInfo = {'serverInfo': {"wordcount": 100,
+                                     "channels": []
+                                     }
+                      }
+
+
         # adding wordcount so guild owner can adjust the thresholds
-        streakData.update({guildId: {"wordcount": 100}})
+        streakData.update({guildId: serverInfo})
 
         for member in guild.members:
             # checking if the user is a bot as we wont be tracking the bots
@@ -293,7 +295,7 @@ class StreakBot(commands.Cog):
         guildMessageFrom = str(ctx.guild.id)
 
         # the threshold(total messages to achieve to streak) the guild has been set to
-        guildMessageThreshold = streakData[guildMessageFrom]["wordcount"]
+        guildMessageThreshold = streakData[guildMessageFrom]['serverInfo']["wordcount"]
 
         self.embed = dict(
             title=f"**==DISCORD STREAK INFO==**",
@@ -307,7 +309,7 @@ class StreakBot(commands.Cog):
                 "url": "https://cdn3.iconfinder.com/data/icons/shopping-e-commerce-33/980/shopping-24-512.png"},
             fields=[dict(name=f"**====================** \n"
                          , value=f":book: Total Servers\n"
-                                  f":book: Total Players\n"
+                                 f":book: Total Players\n"
                                  f":book: Total Channels\n"
                                  f":book: My Connection\n"
                                  "====================", inline=True),
@@ -329,7 +331,7 @@ class StreakBot(commands.Cog):
 
         # retrieving the data for that guild
         streakUsersFromGuild = streakData[guildID]
-        guildMessageThreshold = streakUsersFromGuild["wordcount"]
+        guildMessageThreshold = streakUsersFromGuild['serverInfo']["wordcount"]
         # the user's Name
         userName = user.name
 
@@ -358,23 +360,25 @@ class StreakBot(commands.Cog):
         streakClaimedMessage = "You have claimed your streak for today"
 
         # footer message to indicate if the user has received a streak for today
-        footerMessage = streakClaimedMessage if userTotalMessages >= guildMessageThreshold else f"Word count till streak {guildMessageThreshold - userTotalMessages}"\
-
-
-        #userTotalMessages = userTotalMessages if userTotalMessages < 100 else f"{userTotalMessages} "
+        footerMessage = streakClaimedMessage if userTotalMessages >= guildMessageThreshold else f"Word count till streak {guildMessageThreshold - userTotalMessages}" \
+ \
+            # userTotalMessages = userTotalMessages if userTotalMessages < 100 else f"{userTotalMessages} "
 
         self.embed = dict(
             color=9127187,
-            author={"icon_url": f"{user.avatar_url}", "url":f"{user.avatar_url}","name":f"{userName}'s Profile Summary"},
+            author={"icon_url": f"{user.avatar_url}", "url": f"{user.avatar_url}",
+                    "name": f"{userName}'s Profile Summary"},
             fields=[
                 dict(name="**Highest Streak**", value=userHighestStreak, inline=True),
                 dict(name="**Current Streak**", value=userStreakFormat, inline=True),
-                dict(name=":book: **Other Stats**", value=f":small_blue_diamond: **Last Streaked:**  \u200b {lastStreakedDate}\n"
-                                                   f":small_blue_diamond: **Current Word Count:**  \u200b {userTotalMessages:0,}\n"
-                                                    f":small_blue_diamond: **Total Word Count:**  \u200b {userHighestMessageCount:0,}", inline = False),
+                dict(name=":book: **Other Stats**",
+                     value=f":small_blue_diamond: **Last Streaked:**  \u200b {lastStreakedDate}\n"
+                           f":small_blue_diamond: **Current Word Count:**  \u200b {userTotalMessages:0,}\n"
+                           f":small_blue_diamond: **Total Word Count:**  \u200b {userHighestMessageCount:0,}",
+                     inline=False),
 
             ],
-            #image = {"url": f"{user.avatar_url}"},
+            # image = {"url": f"{user.avatar_url}"},
             # footer
             footer=dict(text=f"{footerMessage}"),
 
@@ -401,8 +405,8 @@ class StreakBot(commands.Cog):
                         2000: "",
                         10000: "",
                         20000: "",
-                        40000: "",
-                        80000: ""}
+                        50000: "",
+                        100000: ""}
 
         # loop through the milestone and check if the user has reached the milestone if they have give them diamond
         # else cross
@@ -421,8 +425,6 @@ class StreakBot(commands.Cog):
 
         achievement2 = dict(name="**Words Milestones**",
                             value=f"{achievementMsgCheck}", inline=True)
-
-
 
         bottomBar = dict(name="=====**More Achievements To Come**====", value=f"\u200b")
 
@@ -447,9 +449,8 @@ class StreakBot(commands.Cog):
 
         # if it is not the guild owner ignore | only guild owner can set threshold
         if currentUserId == guildOwnerId:
-            newThreshold = streakData[guildMessageFrom]["wordcount"] = newThresholdCounter
+            newThreshold = streakData[guildMessageFrom]['serverInfo']["wordcount"] = newThresholdCounter
 
-            json.dump(streakData, open("streak.json", "w"))
             await ctx.channel.send(f"New message threshold has been set for the server to {newThresholdCounter}")
 
     # this is only needed if you had the old system and need to add extra info
@@ -459,7 +460,13 @@ class StreakBot(commands.Cog):
         # we will be looping through the servers to add or reset the streak
         for guild in streakData:
 
-            streakData[guild].update({"wordcount": 100})
+            serverInfo = {'serverInfo': {"wordcount": 100,
+                                         "channels": []
+                                         }
+                          }
+
+            if 'serverInfo' not in streakData[guild]:
+                streakData[guild].update(serverInfo)
 
             # check each members in the guild
             for member in streakData[guild]:
@@ -505,8 +512,13 @@ class StreakBot(commands.Cog):
 
                     usersInCurrentGuild[guild.id].update({member.id: [0, 0, False, newDataSet]})
 
+            serverInfo = {'serverInfo': {"wordcount": 100,
+                                         "channels": []
+                                         }
+                          }
+
             # add word count for the server
-            usersInCurrentGuild[guild.id].update({"wordcount": 100})
+            usersInCurrentGuild[guild.id].update(serverInfo)
 
         json.dump(usersInCurrentGuild, open("streak.json", "w"))
 
@@ -516,7 +528,9 @@ class StreakBot(commands.Cog):
 
         guildMessageFrom = str(ctx.guild.id)
 
-        if ctx.author.id == 125604422007914497:
+        testGuildID = 602439523284287508
+
+        if ctx.author.id == 125604422007914497 and ctx.guild.id == testGuildID:
             mentionedUser = ctx.message.mentions[0].name
             mentionedUserID = str(ctx.message.mentions[0].id)
             # give the user a streak point
@@ -529,8 +543,8 @@ class StreakBot(commands.Cog):
     async def givemsg(self, ctx, totalStreak):
 
         guildMessageFrom = str(ctx.guild.id)
-
-        if ctx.author.id == 125604422007914497:
+        testGuildID = 602439523284287508
+        if ctx.author.id == 125604422007914497 and ctx.guild.id ==testGuildID:
             mentionedUser = ctx.message.mentions[0].name
             mentionedUserID = str(ctx.message.mentions[0].id)
             # give the user a streak point
