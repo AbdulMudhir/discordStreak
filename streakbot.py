@@ -549,7 +549,7 @@ class StreakBot(commands.Cog):
             mentionedUserID = str(ctx.message.mentions[0].id)
             # give the user a streak point
             streakData[guildMessageFrom][mentionedUserID][3]["highestMessageCount"] += int(totalStreak)
-
+            print("this for commit")
             await ctx.channel.send(f"{mentionedUser} has been given {totalStreak} MSG POINT")
 
 
