@@ -3,7 +3,6 @@
   <component name="ChangeListManager">
     <list default="true" id="7f1c6a87-755c-4365-9d49-4cad3961c86d" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/streak.json" beforeDir="false" afterPath="$PROJECT_DIR$/streak.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/streakbot.py" beforeDir="false" afterPath="$PROJECT_DIR$/streakbot.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -192,7 +191,14 @@
       <option name="project" value="LOCAL" />
       <updated>1584663483809</updated>
     </task>
-    <option name="localTasksCounter" value="13" />
+    <task id="LOCAL-00013" summary="Added milestones for both streaks and word count">
+      <created>1584723931140</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1584723931140</updated>
+    </task>
+    <option name="localTasksCounter" value="14" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -207,46 +213,48 @@
     <MESSAGE value="removed old bot key" />
     <MESSAGE value="added ability to mention someone to get their streak" />
     <MESSAGE value="fixed an issue where updating same json would add duplicate dictonary" />
-    <option name="LAST_COMMIT_MESSAGE" value="fixed an issue where updating same json would add duplicate dictonary" />
+    <MESSAGE value="Added milestones for both streaks and word count" />
+    <option name="LAST_COMMIT_MESSAGE" value="Added milestones for both streaks and word count" />
   </component>
   <component name="WindowStateProjectService">
     <state x="734" y="356" width="1092" height="741" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1583520640708">
       <screen x="0" y="0" width="2560" height="1400" />
     </state>
     <state x="734" y="356" width="1092" height="741" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1583520640708" />
-    <state x="934" y="295" key="CommitChangelistDialog2" timestamp="1584663483011">
-      <screen x="0" y="0" width="2560" height="1400" />
+    <state x="-327" y="-892" key="CommitChangelistDialog2" timestamp="1584723929740">
+      <screen x="-1028" y="-1101" width="1920" height="1020" />
     </state>
+    <state x="-327" y="-892" key="CommitChangelistDialog2/-1028.-1101.1920.1020/892.-1080.1920.1040/0.0.1280.680@-1028.-1101.1920.1020" timestamp="1584723929740" />
     <state x="934" y="295" key="CommitChangelistDialog2/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1584663483011" />
     <state x="1237" y="912" key="FileChooserDialogImpl" timestamp="1584040755342">
       <screen x="0" y="0" width="2560" height="1400" />
     </state>
     <state x="1237" y="912" key="FileChooserDialogImpl/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1584040755342" />
-    <state width="1355" height="352" key="GridCell.Tab.0.bottom" timestamp="1584722704717">
+    <state width="1355" height="352" key="GridCell.Tab.0.bottom" timestamp="1584724532634">
       <screen x="-1028" y="-1101" width="1920" height="1020" />
     </state>
-    <state width="1355" height="352" key="GridCell.Tab.0.bottom/-1028.-1101.1920.1020/892.-1080.1920.1040/0.0.1280.680@-1028.-1101.1920.1020" timestamp="1584722704717" />
+    <state width="1355" height="352" key="GridCell.Tab.0.bottom/-1028.-1101.1920.1020/892.-1080.1920.1040/0.0.1280.680@-1028.-1101.1920.1020" timestamp="1584724532634" />
     <state width="1355" height="352" key="GridCell.Tab.0.bottom/-1028.-1101.1920.1020/892.-1080.1920.1040/0.0.1280.680@892.-1080.1920.1040" timestamp="1584722552245" />
     <state width="2304" height="233" key="GridCell.Tab.0.bottom/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1584664049520" />
     <state width="1419" height="35" key="GridCell.Tab.0.bottom/0.0.2560.1400/2560.0.1440.860@2560.0.1440.860" timestamp="1583537713840" />
-    <state width="1355" height="352" key="GridCell.Tab.0.center" timestamp="1584722704717">
+    <state width="1355" height="352" key="GridCell.Tab.0.center" timestamp="1584724532633">
       <screen x="-1028" y="-1101" width="1920" height="1020" />
     </state>
-    <state width="1355" height="352" key="GridCell.Tab.0.center/-1028.-1101.1920.1020/892.-1080.1920.1040/0.0.1280.680@-1028.-1101.1920.1020" timestamp="1584722704717" />
+    <state width="1355" height="352" key="GridCell.Tab.0.center/-1028.-1101.1920.1020/892.-1080.1920.1040/0.0.1280.680@-1028.-1101.1920.1020" timestamp="1584724532633" />
     <state width="1355" height="352" key="GridCell.Tab.0.center/-1028.-1101.1920.1020/892.-1080.1920.1040/0.0.1280.680@892.-1080.1920.1040" timestamp="1584722552245" />
     <state width="2304" height="233" key="GridCell.Tab.0.center/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1584664049519" />
     <state width="1419" height="35" key="GridCell.Tab.0.center/0.0.2560.1400/2560.0.1440.860@2560.0.1440.860" timestamp="1583537713840" />
-    <state width="1355" height="352" key="GridCell.Tab.0.left" timestamp="1584722704716">
+    <state width="1355" height="352" key="GridCell.Tab.0.left" timestamp="1584724532633">
       <screen x="-1028" y="-1101" width="1920" height="1020" />
     </state>
-    <state width="1355" height="352" key="GridCell.Tab.0.left/-1028.-1101.1920.1020/892.-1080.1920.1040/0.0.1280.680@-1028.-1101.1920.1020" timestamp="1584722704716" />
+    <state width="1355" height="352" key="GridCell.Tab.0.left/-1028.-1101.1920.1020/892.-1080.1920.1040/0.0.1280.680@-1028.-1101.1920.1020" timestamp="1584724532633" />
     <state width="1355" height="352" key="GridCell.Tab.0.left/-1028.-1101.1920.1020/892.-1080.1920.1040/0.0.1280.680@892.-1080.1920.1040" timestamp="1584722552245" />
     <state width="2304" height="233" key="GridCell.Tab.0.left/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1584664049519" />
     <state width="1419" height="35" key="GridCell.Tab.0.left/0.0.2560.1400/2560.0.1440.860@2560.0.1440.860" timestamp="1583537713840" />
-    <state width="1355" height="352" key="GridCell.Tab.0.right" timestamp="1584722704717">
+    <state width="1355" height="352" key="GridCell.Tab.0.right" timestamp="1584724532634">
       <screen x="-1028" y="-1101" width="1920" height="1020" />
     </state>
-    <state width="1355" height="352" key="GridCell.Tab.0.right/-1028.-1101.1920.1020/892.-1080.1920.1040/0.0.1280.680@-1028.-1101.1920.1020" timestamp="1584722704717" />
+    <state width="1355" height="352" key="GridCell.Tab.0.right/-1028.-1101.1920.1020/892.-1080.1920.1040/0.0.1280.680@-1028.-1101.1920.1020" timestamp="1584724532634" />
     <state width="1355" height="352" key="GridCell.Tab.0.right/-1028.-1101.1920.1020/892.-1080.1920.1040/0.0.1280.680@892.-1080.1920.1040" timestamp="1584722552245" />
     <state width="2304" height="233" key="GridCell.Tab.0.right/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1584664049519" />
     <state width="1419" height="35" key="GridCell.Tab.0.right/0.0.2560.1400/2560.0.1440.860@2560.0.1440.860" timestamp="1583537713840" />
@@ -254,9 +262,10 @@
       <screen x="0" y="0" width="2560" height="1400" />
     </state>
     <state x="781" y="343" key="SettingsEditor/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1583520647867" />
-    <state x="872" y="434" key="Vcs.Push.Dialog.v2" timestamp="1584663484933">
-      <screen x="0" y="0" width="2560" height="1400" />
+    <state x="-374" y="-785" key="Vcs.Push.Dialog.v2" timestamp="1584723935325">
+      <screen x="-1028" y="-1101" width="1920" height="1020" />
     </state>
+    <state x="-374" y="-785" key="Vcs.Push.Dialog.v2/-1028.-1101.1920.1020/892.-1080.1920.1040/0.0.1280.680@-1028.-1101.1920.1020" timestamp="1584723935325" />
     <state x="872" y="434" key="Vcs.Push.Dialog.v2/0.0.2560.1400/2560.0.1440.860@0.0.2560.1400" timestamp="1584663484933" />
     <state x="885" y="280" width="1456" height="714" key="dock-window-1" timestamp="1583662521134">
       <screen x="0" y="0" width="2560" height="1400" />

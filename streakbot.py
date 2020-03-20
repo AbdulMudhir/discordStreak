@@ -42,6 +42,7 @@ class StreakBot(commands.Cog):
             # if the user is not a bot we will add a streak (only if they meet the criteria)
             self.addUserStreak(userId, guildMessageFrom, messageLength, guildMessageThreshold)
 
+
     def addUserStreak(self, userId, guildMessageFrom, messageLength, guildMessageThreshold):
 
         # load the current users  total messages
@@ -52,6 +53,8 @@ class StreakBot(commands.Cog):
 
         # adding total total messages to the user
         streakData[guildMessageFrom][userId][0] += messageLength
+
+        userHighestWordCount = streakData[guildMessageFrom][userId][3]["highestMessageCount"]
 
         # if user has not been given a streak for today but has sent over the guild threshold
         if not streakedToday and currentUserTotalMessage >= guildMessageThreshold:
@@ -68,6 +71,9 @@ class StreakBot(commands.Cog):
 
             if userCurrentStreak >= userHighestStreak:
                 streakData[guildMessageFrom][userId][3]["highestStreak"] = userCurrentStreak
+
+        if currentUserTotalMessage >= userHighestWordCount:
+            streakData[guildMessageFrom][userId][3]["highestMessageCount"] = userCurrentStreak
 
     # streak commands
     @commands.command()
@@ -351,7 +357,7 @@ class StreakBot(commands.Cog):
         userTotalMessages = userTotalMessages if userTotalMessages < 100 else f"{userTotalMessages} "
 
         self.embed = dict(
-            title=f"**== {userName} ==**",
+            title=f"**== {userName}'s Profile Summary ==**",
             color=9127187,
             thumbnail={"url": f"{user.avatar_url}"},
             fields=[
