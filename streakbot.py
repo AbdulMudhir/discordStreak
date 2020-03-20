@@ -26,7 +26,7 @@ class StreakBot(commands.Cog):
         self.dateCheck.start()
 
         # self.scanCurrentServer()
-        #self.updateJson()
+        # self.updateJson()
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -60,7 +60,7 @@ class StreakBot(commands.Cog):
 
             streakData[guildMessageFrom][userId][3]['lastStreakDay'] = self.today
 
-            userHighestStreak= streakData[guildMessageFrom][userId][3]["highestStreak"]
+            userHighestStreak = streakData[guildMessageFrom][userId][3]["highestStreak"]
             userCurrentStreak = streakData[guildMessageFrom][userId][1]
 
             # change the boolean to True as they have received a streak for today
@@ -68,7 +68,6 @@ class StreakBot(commands.Cog):
 
             if userCurrentStreak >= userHighestStreak:
                 streakData[guildMessageFrom][userId][3]["highestStreak"] = userCurrentStreak
-
 
     # streak commands
     @commands.command()
@@ -328,6 +327,7 @@ class StreakBot(commands.Cog):
 
         # last time the user streaked
         lastStreakedDate = extraInfo['lastStreakDay']
+        userMessageCount = extraInfo["highestMessageCount"]
 
         # adding emotes based on different stages of streak
         # if user has reached 3 or more streak day they get fire streak
@@ -366,27 +366,46 @@ class StreakBot(commands.Cog):
         )
 
         # check if the user has achieved any of the milestones
-        self.achievementUnlocks(userTotalStreak)
+        self.achievementUnlocks(userTotalStreak, userMessageCount)
 
         await ctx.channel.send(embed=discord.Embed.from_dict(self.embed))
 
-    def achievementUnlocks(self, userStreak):
+    def achievementUnlocks(self, userStreak, totalMessage):
 
         # milestone that will be used for looping
         milestones = {10: "",
                       20: "",
-                      50: "",
+                      40: "",
+                      60: "",
+                      80: "",
                       100: "",
-                      200: "",
-                      500: ""}
-        # loop through the milestone and check if the user has reached the milestone if they have give them diamond else cross
-        achievementChecks = "\n".join([f":gem: {milestone} Streak Milestone"
-                                       if userStreak >= milestone else f":x: {milestone} Streak Milestone"
-                                       for milestone in milestones])
+                      150: ""}
+
+        msgMilestone = {100: "",
+                        500: "",
+                        1000: "",
+                        5000: "",
+                        10000: "",
+                        20000: "",
+                        30000: ""}
+
+        # loop through the milestone and check if the user has reached the milestone if they have give them diamond
+        # else cross
+
+        achievementStreakCheck = '\n'.join([f":gem: {milestone} Streaks"
+                                            if userStreak >= milestone else f":x: {milestone} Streaks"
+                                            for milestone in milestones])
+
+        achievementMsgCheck = '\n'.join([
+            f":gem: {milestone:02,} words" if totalMessage >= milestone else f":x: {milestone:02,} words"
+            for milestone in msgMilestone])
 
         # add the achievement to the embed to display
-        achievements = dict(name="=============================", value=f"**Achievements**\n" f"\n{achievementChecks}",
-                            inline=True)
+        achievements = dict(name="**Streak Milestones**",
+                            value=f"{achievementStreakCheck}", inline=True)
+
+        achievement2 = dict(name="**Words Milestones**",
+                            value=f"{achievementMsgCheck}", inline=True)
 
         otherUpdate = dict(name="=============================",
                            value=f"**More Achievements to come**")
@@ -394,6 +413,7 @@ class StreakBot(commands.Cog):
         bottomBar = dict(name="=============================", value=f"\u200b")
 
         self.embed['fields'].append(achievements)
+        self.embed['fields'].append(achievement2)
         self.embed['fields'].append(otherUpdate)
         self.embed['fields'].append(bottomBar)
 
