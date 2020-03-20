@@ -3,9 +3,8 @@ import json
 from discord.ext import commands
 from discord.ext import tasks
 from datetime import datetime
-import time
 
-bot = commands.Bot(command_prefix='$')
+bot = commands.Bot(command_prefix='!')
 
 usersInCurrentGuild = {}
 
@@ -26,7 +25,7 @@ class StreakBot(commands.Cog):
         self.dateCheck.start()
 
         #self.scanCurrentServer()
-        #self.updateJson()
+        self.updateJson()
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -181,14 +180,17 @@ class StreakBot(commands.Cog):
         # we will be looping through the servers to add or reset the streak
         for guild in streakData:
 
+            guildWordCount = streakData[guild]['serverInfo']["wordcount"]
+
             # check each members in the guild
             for member in streakData[guild]:
 
                 # retrieve total messages sent
                 memberTotalMessage = streakData[guild][member][0]
 
+
                 # if the user has sent more than 20 words today
-                if memberTotalMessage >= 100:
+                if memberTotalMessage >= guildWordCount:
 
                     # reset their messages sent
                     streakData[guild][member][0] = 0
@@ -321,6 +323,20 @@ class StreakBot(commands.Cog):
                                                                 f"====================",
                          inline=True),
 
+                    dict(name="**Useful Links**",
+                         value=f":white_small_square: [Vote](https://top.gg/bot/685559923450445887) for the bot \n"
+                               f":white_small_square: [support channel](https://discord.gg/F6hvm2) for features request| upcoming updates"
+                         ,
+                         inline=False),
+
+                    dict(name="**Update**", value=f":white_small_square: **!streak @someone** to view their summary profile\n"
+                                                  f":white_small_square: **!streak me** to view your own profile \n"
+                                                  f":white_small_square: small Achievement has been added summary profile.\n"
+                                                  f":white_small_square: set threshold for amount words for a streak **!threshold amount** \n"
+                                                  f":white_small_square: **only server owner can set threshold**",
+                         inline=False),
+
+
                     ],
 
             footer=dict(text=f"HAPPY STREAKING!"),
@@ -445,13 +461,18 @@ class StreakBot(commands.Cog):
         guildOwnerId = ctx.guild.owner_id
         currentUserId = ctx.author.id
         guildMessageFrom = str(ctx.guild.id)
-        newThresholdCounter = int(total)
 
         # if it is not the guild owner ignore | only guild owner can set threshold
         if currentUserId == guildOwnerId:
-            newThreshold = streakData[guildMessageFrom]['serverInfo']["wordcount"] = newThresholdCounter
+            # in case the user has put in words as a digit instead of actual integers
+            try:
+                newThresholdCounter = int(total)
 
-            await ctx.channel.send(f"New message threshold has been set for the server to {newThresholdCounter}")
+                newThreshold = streakData[guildMessageFrom]['serverInfo']["wordcount"] = newThresholdCounter
+
+                await ctx.channel.send(f"New message threshold has been set for the server to {newThresholdCounter}")
+            except ValueError:
+                pass
 
     # this is only needed if you had the old system and need to add extra info
 
@@ -549,7 +570,7 @@ class StreakBot(commands.Cog):
             mentionedUserID = str(ctx.message.mentions[0].id)
             # give the user a streak point
             streakData[guildMessageFrom][mentionedUserID][3]["highestMessageCount"] += int(totalStreak)
-            print("this for commit")
+
             await ctx.channel.send(f"{mentionedUser} has been given {totalStreak} MSG POINT")
 
 
