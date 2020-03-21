@@ -3,6 +3,7 @@ import json
 from discord.ext import commands
 from discord.ext import tasks
 from datetime import datetime
+from discord.ext.commands import CommandError
 
 bot = commands.Bot(command_prefix='!')
 
@@ -25,7 +26,16 @@ class StreakBot(commands.Cog):
         self.dateCheck.start()
 
         #self.scanCurrentServer()
-        self.updateJson()
+        #self.updateJson()
+
+    # @commands.Cog.listener()
+    # async def on_command_error(self, ctx, error):
+    #     """
+    #     Stop raising error for commands bugs to much
+    #     """
+    #     if isinstance(error, CommandError):
+    #         return
+    #     raise error
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -121,6 +131,7 @@ class StreakBot(commands.Cog):
             # unpack the total messages, and streak days
             totalMessages, streakDays, *_ = list(zip(*usersData))
 
+
             # sorting the users based on the highest streak (will be changing to streak days)
             streakDays, usersID, totalMessages, = zip(*sorted(zip(streakDays, usersID, totalMessages, ), reverse=True))
 
@@ -160,16 +171,16 @@ class StreakBot(commands.Cog):
             await ctx.channel.send(embed=discord.Embed.from_dict(self.embed))
 
     # checking for the dates if its a new day
-    @tasks.loop(minutes=5)
+    @tasks.loop(seconds= 60)
     async def dateCheck(self):
 
-        currentDay = datetime.today().date().strftime("%d-%m-%Y")
-
+        #currentDay = datetime.today().date().strftime("%d-%m-%Y")
+        currentDay = 'test'
         if self.today != currentDay:
             # keeping tracking of the day  before
             yesterday = self.today
             # updating today so it is the correct date
-            self.today = currentDay
+            #self.today = currentDay
 
             print("New Day")
             self.checkStreaks()
@@ -182,11 +193,18 @@ class StreakBot(commands.Cog):
 
             guildWordCount = streakData[guild]['serverInfo']["wordcount"]
 
+
             # check each members in the guild
             for member in streakData[guild]:
 
+                # Ignore server info
+                if member == 'serverInfo':
+                    continue
+
+
                 # retrieve total messages sent
                 memberTotalMessage = streakData[guild][member][0]
+
 
 
                 # if the user has sent more than 20 words today
@@ -194,6 +212,8 @@ class StreakBot(commands.Cog):
 
                     # reset their messages sent
                     streakData[guild][member][0] = 0
+
+                    #print(streakData[guild][member][0])
 
                     #  change streaked today to false as its a new day so no streak yet
                     streakData[guild][member][2] = False
@@ -204,7 +224,7 @@ class StreakBot(commands.Cog):
 
                     # clear the streak if they had any
                     streakData[guild][member][1] = 0
-
+        print('done')
         # back up the file
         json.dump(streakData, open("streak.json", "w"))
 
@@ -240,7 +260,7 @@ class StreakBot(commands.Cog):
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
 
-        print("New Guild Has Joined")
+        print(f"New Guild Has Joined {guild.name}")
 
         guildId = str(guild.id)
 
@@ -249,9 +269,8 @@ class StreakBot(commands.Cog):
                                      }
                       }
 
-
         # adding wordcount so guild owner can adjust the thresholds
-        streakData.update({guildId: serverInfo})
+        streakData.update({guildId: {}})
 
         for member in guild.members:
             # checking if the user is a bot as we wont be tracking the bots
@@ -267,6 +286,9 @@ class StreakBot(commands.Cog):
                 streakData[guildId].update({str(member.id): [0, 0, False, extraInfo]})
             else:
                 continue
+
+        streakData[guildId].update(serverInfo)
+
 
         json.dump(streakData, open("streak.json", "w"))
 
