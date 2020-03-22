@@ -595,7 +595,7 @@ class StreakBot(commands.Cog):
 
             await ctx.channel.send(f"{mentionedUser} has been given {totalStreak} MSG POINT")
 
-
+print("commit test")
 if __name__ == "__main__":
     bot.add_cog(StreakBot(bot))
     bot.remove_command("help")

@@ -132,3 +132,4 @@ class DataBase(sqlite3.Connection):
                                 userInfo
                                 )
             self.commit()
+print("commit test")
