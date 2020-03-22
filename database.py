@@ -41,7 +41,7 @@ class DataBase(sqlite3.Connection):
                     ''', userInfo)
 
         self.cursor.execute('''UPDATE server SET highestStreak = CASE WHEN streakCounter >= highestStreak THEN 
-                streakCounter END  WHERE userID = :userID AND serverID = :serverID ''',
+                streakCounter ELSE highestStreak END  WHERE userID = :userID AND serverID = :serverID ''',
                             userInfo)
 
         self.commit()
@@ -86,7 +86,7 @@ class DataBase(sqlite3.Connection):
         return self.cursor.fetchone()[0]
 
     def setServerThreshold(self, serverID, thresholdAmount):
-        self.cursor.execute(' UPDATE server SET serverThreshold = :threshAmount WHERE serverID = :serverID ;',
+        self.cursor.execute(' UPDATE server SET serverThreshold = :thresholdAmount WHERE serverID = :serverID ;',
                             {'serverID': serverID, 'thresholdAmount': thresholdAmount})
 
         self.commit()
@@ -107,7 +107,7 @@ class DataBase(sqlite3.Connection):
 
         self.commit()
 
-    def viewLeaderBoard(self, serverID):
+    def viewServerLeaderBoard(self, serverID):
         self.cursor.execute('''SELECT  userName,msgCount,streakCounter FROM server 
         WHERE serverID =?
         ORDER BY streakCounter DESC, userName ASC
@@ -163,3 +163,29 @@ class DataBase(sqlite3.Connection):
                                     userInfo
                                     )
                 self.commit()
+
+    def addJsonGuildToSQL(self, guildID, guildThreshold, userID, msgCount, streakCounter, streaked, highestStreak,
+                          lastStreakDay, highestMsgCount):
+        userInfo = {
+            'serverID': guildID,
+            'serverName': "None",
+            'userName': f"None",
+            'userID': userID,
+            'msgCount': msgCount,
+            'serverThreshold': guildThreshold,
+            'streakCounter': streakCounter,
+            'streaked': streaked,
+            'highestStreak': highestStreak,
+            'lastStreakDay': lastStreakDay,
+            'highMsgCount': highestMsgCount}
+
+        self.cursor.execute('''INSERT OR IGNORE INTO server(serverName, serverID,userName, userID, serverThreshold,msgCount,streakCounter, streaked, highestStreak, lastStreakDay, highMsgCount)
+                                        VALUES (:serverName,:serverID, :userName,:userID, :serverThreshold,:msgCount,:streakCounter, :streaked, :highestStreak, :lastStreakDay, :highMsgCount)''',
+                            userInfo
+                            )
+
+    def setNewDayStats(self):
+        print("i am here 3")
+        self.cursor.execute(
+            'UPDATE server SET msgCount = 0, streaked = 0, streakCounter = CASE WHEN msgCount < serverThreshold THEN 0 ELSE streakCounter END')
+        self.commit()
