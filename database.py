@@ -31,6 +31,26 @@ class DataBase(sqlite3.Connection):
                 )
         """)
 
+    def createGlobalTable(self):
+
+        self.cursor.execute(f"""CREATE TABLE server (
+                    serverID INTEGER,
+                    serverName TEXT,
+                    serverThreshold INTEGER,
+                    serverChannels TEXT,
+                    userName TEXT,
+                    userID INTEGER,
+                    msgCount INTEGER,
+                    streakCounter INTEGER,
+                    streaked INTEGER,
+                    highestStreak INTEGER,
+                    lastStreakDay TEXT,
+                    highMsgCount INTEGER,
+                    UNIQUE (userID, serverID)
+
+                )
+                """)
+
     def addStreakToUser(self, serverID, userID, streakDay):
         # give the user a streak, set the streaked to True, set the highest streak if if it's greater than current streak
 
@@ -58,6 +78,28 @@ class DataBase(sqlite3.Connection):
                             {'userID': userID, 'serverID': serverID})
         return self.cursor.fetchone()[0]
 
+    def updateServerName(self, server):
+        self.cursor.execute(
+            'UPDATE server SET serverName =:serverName WHERE serverID = :serverID; ',
+            {'serverID': server.id, 'serverName': server.name})
+        self.commit()
+
+    def updateUserName(self, serverID, user):
+        self.cursor.execute(
+            'UPDATE server SET userName =:userName WHERE serverID = :serverID AND userID =:userID; ',
+            {'serverID': serverID, 'userID': user.id, 'userName': f"{user.name}#{user.discriminator}"})
+        self.commit()
+
+    def getServerName(self, server):
+        self.cursor.execute('SELECT serverName FROM server WHERE serverID = :serverID ;',
+                            {'serverID': server.id})
+        return self.cursor.fetchone()[0]
+
+    def getUserName(self, serverID, user):
+        self.cursor.execute('SELECT userName FROM server WHERE serverID = :serverID and userID = :userID ;',
+                            {'serverID': serverID, 'userID': user.id})
+        return self.cursor.fetchone()[0]
+
     def addMessageCount(self, serverID, userID, msgCount):
         # add message count the users have sent
         self.cursor.execute(
@@ -65,6 +107,8 @@ class DataBase(sqlite3.Connection):
             {'userID': userID, 'serverID': serverID, 'msgCount': msgCount})
 
         self.commit()
+
+
 
     def getUserInfo(self, serverID, userID):
         self.cursor.execute(
@@ -101,6 +145,7 @@ class DataBase(sqlite3.Connection):
                             {'serverID': serverID, 'userID': userID})
         self.commit()
 
+
     def addUserName(self, serverID, user):
         self.cursor.execute(' UPDATE server SET userName = :userName WHERE serverID = :serverID AND userID = :userID;',
                             {'serverID': serverID, 'userID': user.id, 'userName': f"{user.name}#{user.discriminator}"})
@@ -108,10 +153,16 @@ class DataBase(sqlite3.Connection):
         self.commit()
 
     def viewServerLeaderBoard(self, serverID):
-        self.cursor.execute('''SELECT  userName,msgCount,streakCounter FROM server 
+        self.cursor.execute('''SELECT serverID, serverName, userName,userID,msgCount,streakCounter FROM server 
         WHERE serverID =?
         ORDER BY streakCounter DESC, userName ASC
         LIMIT 25''', (serverID,))
+        return self.cursor.fetchall()
+
+    def viewGlobalLeaderBoard(self):
+        self.cursor.execute('''SELECT  serverID, serverName, userName,userID,msgCount,streakCounter FROM global 
+        ORDER BY streakCounter DESC, userName ASC
+        LIMIT 25''')
         return self.cursor.fetchall()
 
     def addUser(self, server, user):
@@ -139,6 +190,8 @@ class DataBase(sqlite3.Connection):
                             )
         self.commit()
 
+
+
     def addNewGuild(self, server):
         # looping through the list of users that get passed on
         # will  be used when a guild joins
@@ -164,12 +217,13 @@ class DataBase(sqlite3.Connection):
                                     )
                 self.commit()
 
+
     def addJsonGuildToSQL(self, guildID, guildThreshold, userID, msgCount, streakCounter, streaked, highestStreak,
                           lastStreakDay, highestMsgCount):
         userInfo = {
             'serverID': guildID,
-            'serverName': "None",
-            'userName': f"None",
+            'serverName': None,
+            'userName': None,
             'userID': userID,
             'msgCount': msgCount,
             'serverThreshold': guildThreshold,

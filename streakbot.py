@@ -21,13 +21,19 @@ class StreakBot(commands.Cog):
         self.bot = bot
         self.embed = None
         self.dataBase = DataBase('discordStreakBot.db')
+        # self.dataBase.createTable()
+        self.dataBase.createGlobalTable()
+
+        # self.migrationToSQL()
+
+
 
     @commands.Cog.listener()
     async def on_ready(self):
         print(f'We have logged in as {self.bot.user}\n')
         self.dateCheck.start()
-        #self.dataBase.createTable()
-        #self.migrationToSQL()
+        # self.dataBase.createTable()
+        # self.migrationToSQL()
 
     # @commands.Cog.listener()
     # async def on_command_error(self, ctx, error):
@@ -67,8 +73,11 @@ class StreakBot(commands.Cog):
         userID = user.id
         guildID = message.guild.id
 
+        print(guildID)
+
         # ignore bots
         if not user.bot:
+
 
             messageLength = len(message.content.split())
             # add the length of the message to the database to track
@@ -80,9 +89,21 @@ class StreakBot(commands.Cog):
             # check if they had streaked
             streaked = self.dataBase.checkUserStreaked(guildID, userID)
 
+            self.fillNoneData(message.guild, user)
+
             # give streak if they had streaked.
             if msgCount >= guildThreshold and not streaked:
                 self.dataBase.addStreakToUser(guildID, userID, self.today)
+
+    # this is temporary till all none data is filled
+    def fillNoneData(self, guild, user):
+        # updating ServerName, will be used to update Database for old info  (temporary will be removed once it has been
+        # updated
+        guildName = self.dataBase.updateServerName(guild) if self.dataBase.getServerName(guild) is None \
+            else self.dataBase.getServerName(guild)
+
+        userName = self.dataBase.updateUserName(guild.id, user) if self.dataBase.getUserName(guild.id, user) is None \
+            else self.dataBase.getUserName(guild.id, user)
 
     @commands.command()
     async def streak(self, ctx, *args):
@@ -91,19 +112,6 @@ class StreakBot(commands.Cog):
 
         guildID = ctx.guild.id
 
-        # return first 25
-        leaderBoard = self.dataBase.viewServerLeaderBoard(guildID)
-
-        # get the username of a user and remove anything after their deliminator #
-        userNames = '\n'.join([user[0].split('#')[0] for user in leaderBoard])
-
-        # userName = []
-        #
-        # for user in leaderBoard:
-        #     userName = user[0].split('#')[0]
-
-        usersTotalMessages = '\n'.join([str(user[1]) for user in leaderBoard])
-        usersStreakDays = '\n'.join([str(user[2]) for user in leaderBoard])
 
         # check if user has mentioned someone
         mention = ctx.message.mentions
@@ -131,7 +139,38 @@ class StreakBot(commands.Cog):
             if otherMessage == "me":
                 await self.mentionStreak(ctx, ctx.author, guildID)
 
+            elif otherMessage == "global":
+                await self.globalLeaderBoard(ctx)
         else:
+
+            # return first 25
+            leaderBoard = self.dataBase.viewServerLeaderBoard(guildID)
+
+            # get the username of a user and remove anything after their deliminator #
+
+            userNames = []
+            for data in leaderBoard:
+                serverID = data[0]
+                serverName = data[1]
+                userName = data[2]
+                userID = data[3]
+                if userName is None:
+                    self.dataBase.updateUserName(serverID, self.bot.get_user(userID))
+                    userNames.append(self.bot.get_user(userID).name)
+                else:
+                    # remove the deliminator as we would only need the name
+                    userNames.append(userName.split('#')[0])
+
+                if serverName is None:
+                    self.dataBase.updateServerName(self.bot.get_guild(serverID))
+
+            userNames = '\n'.join(userNames)
+
+
+
+            usersTotalMessages = '\n'.join([str(user[4]) for user in leaderBoard])
+            usersStreakDays = '\n'.join([str(user[5]) for user in leaderBoard])
+
             self.embed = dict(
                 title=f"**==STREAK LEADERBOARD==**",
                 color=9127187,
@@ -143,6 +182,45 @@ class StreakBot(commands.Cog):
                 footer=dict(text=f"Total Words counted on {self.today}")
             )
             await ctx.channel.send(embed=discord.Embed.from_dict(self.embed))
+
+    async def globalLeaderBoard(self, ctx):
+        # return first 25
+        leaderBoard = self.dataBase.viewGlobalLeaderBoard()
+        # get the username of a user and remove anything after their deliminator #
+        #userNames = '\n'.join([user[1].split('#')[0] for user in leaderBoard])
+
+        userNames = []
+
+        for data in leaderBoard:
+            serverID = data[0]
+            serverName = data[1]
+            userName = data[2]
+            userID = data[3]
+            if userName is None:
+                self.dataBase.updateUserName(serverID, self.bot.get_user(userID))
+                userNames.append(self.bot.get_user(userID).name)
+            else:
+                userNames.append(userName)
+
+            if serverName is None:
+                self.dataBase.updateServerName(self.bot.get_guild(serverID))
+
+        userNames = '\n'.join(userNames)
+
+        usersTotalMessages = '\n'.join([str(user[4]) for user in leaderBoard])
+        usersStreakDays = '\n'.join([str(user[5]) for user in leaderBoard])
+
+        self.embed = dict(
+            title=f"**==GLOBAL STREAK LEADERBOARD==**",
+            color=9127187,
+            thumbnail={
+                "url": "https://cdn4.iconfinder.com/data/icons/miscellaneous-icons-2-1/200/misc_movie_leaderboards3-512.png"},
+            fields=[dict(name="**Users**", value=userNames, inline=True),
+                    dict(name="Streak Total", value=usersStreakDays, inline=True),
+                    dict(name="Total Words Sent", value=usersTotalMessages, inline=True)],
+            footer=dict(text=f"Total Words counted on {self.today}")
+        )
+        await ctx.channel.send(embed=discord.Embed.from_dict(self.embed))
 
     # checking for the dates if its a new day
     @tasks.loop(seconds=60)
