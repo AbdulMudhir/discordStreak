@@ -136,10 +136,14 @@ class DataBase(sqlite3.Connection):
     def removeServer(self, serverID):
         # remove the server from the database
         self.cursor.execute('DELETE FROM server WHERE serverID = :serverID ', {'serverID': serverID})
+        self.cursor.execute('DELETE FROM global WHERE serverID = :serverID ', {'serverID': serverID})
         self.commit()
 
     def removeUser(self, serverID, userID):
         self.cursor.execute('DELETE FROM server WHERE serverID = :serverID AND userID = :userID',
+                            {'serverID': serverID, 'userID': userID})
+
+        self.cursor.execute('DELETE FROM global WHERE serverID = :serverID AND userID = :userID',
                             {'serverID': serverID, 'userID': userID})
         self.commit()
 
@@ -185,6 +189,23 @@ class DataBase(sqlite3.Connection):
                 VALUES (:serverName,:serverID,:userName, :userID, :serverThreshold,:msgCount,:streakCounter, :streaked, :highestStreak, :lastStreakDay, :highMsgCount)''',
                             userInfo
                             )
+        userInfoGlobal = {
+            'serverID': server.id,
+            'serverName': server.name,
+            'userName': f"{user.name}#{user.discriminator}",
+            'userID': user.id,
+            'msgCount': 0,
+            'serverThreshold': 500,
+            'streakCounter': 0,
+            'streaked': 0,
+            'highestStreak': 0,
+            'lastStreakDay': "Never Streaked",
+            'highMsgCount': 0}
+
+        self.cursor.execute('''INSERT OR IGNORE INTO global(serverName, serverID, userName, userID, serverThreshold,msgCount,streakCounter, streaked, highestStreak, lastStreakDay, highMsgCount)
+                        VALUES (:serverName,:serverID,:userName, :userID, :serverThreshold,:msgCount,:streakCounter, :streaked, :highestStreak, :lastStreakDay, :highMsgCount)''',
+                            userInfoGlobal
+                            )
         self.commit()
 
     def addNewGuild(self, server):
@@ -206,9 +227,26 @@ class DataBase(sqlite3.Connection):
                     'lastStreakDay': "Never Streaked",
                     'highMsgCount': 0}
 
+                userInfoGlobal = {
+                    'serverID': server.id,
+                    'serverName': server.name,
+                    'userName': f"{user.name}#{user.discriminator}",
+                    'userID': user.id,
+                    'msgCount': 0,
+                    'serverThreshold': 500,
+                    'streakCounter': 0,
+                    'streaked': 0,
+                    'highestStreak': 0,
+                    'lastStreakDay': "Never Streaked",
+                    'highMsgCount': 0}
+
                 self.cursor.execute('''INSERT OR IGNORE INTO server(serverName, serverID,userName, userID, serverThreshold,msgCount,streakCounter, streaked, highestStreak, lastStreakDay, highMsgCount)
                                 VALUES (:serverName,:serverID, :userName,:userID, :serverThreshold,:msgCount,:streakCounter, :streaked, :highestStreak, :lastStreakDay, :highMsgCount)''',
                                     userInfo
+                                    )
+                self.cursor.execute('''INSERT OR IGNORE INTO global(serverName, serverID,userName, userID, serverThreshold,msgCount,streakCounter, streaked, highestStreak, lastStreakDay, highMsgCount)
+                                                VALUES (:serverName,:serverID, :userName,:userID, :serverThreshold,:msgCount,:streakCounter, :streaked, :highestStreak, :lastStreakDay, :highMsgCount)''',
+                                    userInfoGlobal
                                     )
                 self.commit()
 

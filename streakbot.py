@@ -21,9 +21,9 @@ class StreakBot(commands.Cog):
         self.bot = bot
         self.embed = None
         self.dataBase = DataBase('discordStreakBot.db')
-        self.dataBase.createTable()
-        self.dataBase.createGlobalTable()
-        self.migrationToSQL()
+        #self.dataBase.createTable()
+        #self.dataBase.createGlobalTable()
+       # self.migrationToSQL()
 
     @commands.Cog.listener()
     async def on_ready(self):
