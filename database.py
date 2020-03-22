@@ -64,25 +64,39 @@ class DataBase(sqlite3.Connection):
                 streakCounter ELSE highestStreak END  WHERE userID = :userID AND serverID = :serverID ''',
                             userInfo)
 
+        self.commit()
+
+    # to be used for debugging only
+    def setStreakToUser(self, serverID, userID, amount):
+        # give the user a streak, set the streaked to True, set the highest streak if if it's greater than current streak
+
+        userInfo = {'userID': userID, 'serverID': serverID, 'amount': amount}
+
+        self.cursor.execute('''UPDATE server SET streakCounter = :amount, streaked = 1
+                    WHERE userID = :userID AND serverID = :serverID ;
+                    ''', userInfo)
+
+        self.cursor.execute('''UPDATE server SET highestStreak = CASE WHEN streakCounter >= highestStreak THEN 
+                streakCounter ELSE highestStreak END  WHERE userID = :userID AND serverID = :serverID ''',
+                            userInfo)
 
         self.commit()
 
+    # to be used for debugging only
     def setMsgCountToUser(self, serverID, userID, amount):
         # give the user a streak, set the streaked to True, set the highest streak if if it's greater than current streak
 
         userInfo = {'userID': userID, 'serverID': serverID, 'amount': amount}
 
-        self.cursor.execute('''UPDATE server SET msgCount = :amount
+        self.cursor.execute('''UPDATE server SET highMsgCount = :amount
                        WHERE userID = :userID AND serverID = :serverID ;
                        ''', userInfo)
-
-
 
         self.commit()
 
     def addGlobalStreakUser(self, userID, streakDay):
 
-        userInfo = {'userID': userID,'lastStreakDay': streakDay}
+        userInfo = {'userID': userID, 'lastStreakDay': streakDay}
         self.cursor.execute('''UPDATE global SET streakCounter = streakCounter + 1, streaked = 1, lastStreakDay = :lastStreakDay
                             WHERE userID = :userID;
                             ''', userInfo)
@@ -99,7 +113,7 @@ class DataBase(sqlite3.Connection):
                             {'userID': userID, 'serverID': serverID})
         return self.cursor.fetchone()[0]
 
-    def checkUserGlobalStreaked(self,userID):
+    def checkUserGlobalStreaked(self, userID):
         # check if the user has streaked
         self.cursor.execute('SELECT streaked FROM global WHERE userID = :userID ;',
                             {'userID': userID})
@@ -169,7 +183,7 @@ class DataBase(sqlite3.Connection):
 
     def getGlobalThreshold(self):
         self.cursor.execute('SELECT serverThreshold Threshold FROM global',
-                           )
+                            )
         return self.cursor.fetchone()[0]
 
     def getMessageCount(self, serverID, userID):

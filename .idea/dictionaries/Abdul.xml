@@ -3,6 +3,8 @@
     <words>
       <w>givemsg</w>
       <w>givestreak</w>
+      <w>setmsg</w>
+      <w>setstreak</w>
       <w>streakme</w>
     </words>
   </dictionary>
