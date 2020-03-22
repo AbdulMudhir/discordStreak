@@ -1,5 +1,8 @@
 # DiscordStreakBot
 
+<a href="https://top.gg/bot/685559923450445887" >
+  <img src="https://top.gg/api/widget/685559923450445887.svg" alt="DiscordStreak" />
+</a>
 
 **Any features request please DM hunter#2950**
 
@@ -34,7 +37,6 @@ small Achievement has been added summary profile(see below).
 !streak will display the leaderboard for the current server and only the top 25 active users will be displayed. The !info will provide small summary of the rules and any extra info
 
 
-[invite link](https://discordapp.com/oauth2/authorize?client_id=685559923450445887&permissions=2048&scope=bot) if you want to add the 
 
 ![](https://i.imgur.com/FwIEvYK.png)
 
