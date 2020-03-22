@@ -21,16 +21,17 @@ class StreakBot(commands.Cog):
         self.bot = bot
         self.embed = None
         self.dataBase = DataBase('discordStreakBot.db')
-        #self.dataBase.createTable()
-        #self.dataBase.createGlobalTable()
-       # self.migrationToSQL()
+        self.dataBase.createTable()
+        self.dataBase.createGlobalTable()
+
+        self.migrationToSQL()
 
     @commands.Cog.listener()
     async def on_ready(self):
         print(f'We have logged in as {self.bot.user}\n')
         self.dateCheck.start()
         # self.dataBase.createTable()
-        #self.migrationToSQL()
+        # self.migrationToSQL()
 
     # @commands.Cog.listener()
     # async def on_command_error(self, ctx, error):
@@ -84,11 +85,19 @@ class StreakBot(commands.Cog):
             # check if they had streaked
             streaked = self.dataBase.checkUserStreaked(guildID, userID)
 
+            # get stats for the global version
+            streakedGlobal = self.dataBase.checkUserGlobalStreaked(userID)
+            globalThreshold = self.dataBase.getGlobalThreshold()
+            msgCountGlobal = self.dataBase.getMessageCountGlobal(userID)
+
             self.fillNoneData(message.guild, user)
 
             # give streak if they had streaked.
             if msgCount >= guildThreshold and not streaked:
                 self.dataBase.addStreakToUser(guildID, userID, self.today)
+
+            if msgCountGlobal >= globalThreshold and not streakedGlobal:
+                self.dataBase.addGlobalStreakUser(userID, self.today)
 
     # this is temporary till all none data is filled
     def fillNoneData(self, guild, user):

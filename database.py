@@ -46,7 +46,7 @@ class DataBase(sqlite3.Connection):
                     highestStreak INTEGER,
                     lastStreakDay TEXT,
                     highMsgCount INTEGER,
-                    UNIQUE (userID, serverID)
+                    UNIQUE (userID)
 
                 )
                 """)
@@ -64,12 +64,30 @@ class DataBase(sqlite3.Connection):
                 streakCounter ELSE highestStreak END  WHERE userID = :userID AND serverID = :serverID ''',
                             userInfo)
 
+
         self.commit()
+
+    def addGlobalStreakUser(self, userID, streakDay):
+
+        userInfo = {'userID': userID,'lastStreakDay': streakDay}
+        self.cursor.execute('''UPDATE global SET streakCounter = streakCounter + 1, streaked = 1, lastStreakDay = :lastStreakDay
+                            WHERE userID = :userID;
+                            ''', userInfo)
+
+        self.cursor.execute('''UPDATE global SET highestStreak = CASE WHEN streakCounter >= highestStreak THEN 
+                streakCounter ELSE highestStreak END  WHERE userID = :userID ''',
+                            userInfo)
 
     def checkUserStreaked(self, serverID, userID):
         # check if the user has streaked
         self.cursor.execute('SELECT streaked FROM server WHERE serverID = :serverID AND userID = :userID ;',
                             {'userID': userID, 'serverID': serverID})
+        return self.cursor.fetchone()[0]
+
+    def checkUserGlobalStreaked(self,userID):
+        # check if the user has streaked
+        self.cursor.execute('SELECT streaked FROM global WHERE userID = :userID ;',
+                            {'userID': userID})
         return self.cursor.fetchone()[0]
 
     def checkUserHighestMsgCount(self, serverID, userID):
@@ -102,9 +120,15 @@ class DataBase(sqlite3.Connection):
 
     def addMessageCount(self, serverID, userID, msgCount):
         # add message count the users have sent
+
+        userInfo = {'userID': userID, 'serverID': serverID, 'msgCount': msgCount}
         self.cursor.execute(
             'UPDATE server SET msgCount = msgCount + :msgCount, highMsgCount = highMsgCount + :msgCount WHERE serverID = :serverID AND userID = :userID; ',
-            {'userID': userID, 'serverID': serverID, 'msgCount': msgCount})
+            userInfo)
+
+        self.cursor.execute(
+            'UPDATE global SET msgCount = msgCount + :msgCount, highMsgCount = highMsgCount + :msgCount WHERE userID = :userID; ',
+            userInfo)
 
         self.commit()
 
@@ -120,10 +144,22 @@ class DataBase(sqlite3.Connection):
                             {'serverID': serverID})
         return self.cursor.fetchone()[0]
 
+    def getGlobalThreshold(self):
+        self.cursor.execute('SELECT serverThreshold Threshold FROM global',
+                           )
+        return self.cursor.fetchone()[0]
+
     def getMessageCount(self, serverID, userID):
         # retrieve the amount of message the user current has now
         self.cursor.execute('SELECT msgCount FROM server WHERE serverID = :serverID AND userID = :userID ;',
                             {'userID': userID, 'serverID': serverID})
+        # retrieve message count
+        return self.cursor.fetchone()[0]
+
+    def getMessageCountGlobal(self, userID):
+        # retrieve the amount of message the user current has now
+        self.cursor.execute('SELECT msgCount FROM global WHERE userID = :userID ;',
+                            {'userID': userID})
         # retrieve message count
         return self.cursor.fetchone()[0]
 
