@@ -33,7 +33,7 @@ class DataBase(sqlite3.Connection):
 
     def createGlobalTable(self):
 
-        self.cursor.execute(f"""CREATE TABLE server (
+        self.cursor.execute(f"""CREATE TABLE global (
                     serverID INTEGER,
                     serverName TEXT,
                     serverThreshold INTEGER,
@@ -84,10 +84,10 @@ class DataBase(sqlite3.Connection):
             {'serverID': server.id, 'serverName': server.name})
         self.commit()
 
-    def updateUserName(self, serverID, user):
+    def updateUserName(self, user):
         self.cursor.execute(
-            'UPDATE server SET userName =:userName WHERE serverID = :serverID AND userID =:userID; ',
-            {'serverID': serverID, 'userID': user.id, 'userName': f"{user.name}#{user.discriminator}"})
+            'UPDATE server SET userName =:userName WHERE userID =:userID; ',
+            {'userID': user.id, 'userName': f"{user.name}#{user.discriminator}"})
         self.commit()
 
     def getServerName(self, server):
@@ -95,9 +95,9 @@ class DataBase(sqlite3.Connection):
                             {'serverID': server.id})
         return self.cursor.fetchone()[0]
 
-    def getUserName(self, serverID, user):
-        self.cursor.execute('SELECT userName FROM server WHERE serverID = :serverID and userID = :userID ;',
-                            {'serverID': serverID, 'userID': user.id})
+    def getUserName(self, user):
+        self.cursor.execute('SELECT userName FROM server WHERE userID = :userID ;',
+                            {'userID': user.id})
         return self.cursor.fetchone()[0]
 
     def addMessageCount(self, serverID, userID, msgCount):
@@ -107,8 +107,6 @@ class DataBase(sqlite3.Connection):
             {'userID': userID, 'serverID': serverID, 'msgCount': msgCount})
 
         self.commit()
-
-
 
     def getUserInfo(self, serverID, userID):
         self.cursor.execute(
@@ -144,7 +142,6 @@ class DataBase(sqlite3.Connection):
         self.cursor.execute('DELETE FROM server WHERE serverID = :serverID AND userID = :userID',
                             {'serverID': serverID, 'userID': userID})
         self.commit()
-
 
     def addUserName(self, serverID, user):
         self.cursor.execute(' UPDATE server SET userName = :userName WHERE serverID = :serverID AND userID = :userID;',
@@ -190,8 +187,6 @@ class DataBase(sqlite3.Connection):
                             )
         self.commit()
 
-
-
     def addNewGuild(self, server):
         # looping through the list of users that get passed on
         # will  be used when a guild joins
@@ -217,7 +212,6 @@ class DataBase(sqlite3.Connection):
                                     )
                 self.commit()
 
-
     def addJsonGuildToSQL(self, guildID, guildThreshold, userID, msgCount, streakCounter, streaked, highestStreak,
                           lastStreakDay, highestMsgCount):
         userInfo = {
@@ -233,9 +227,27 @@ class DataBase(sqlite3.Connection):
             'lastStreakDay': lastStreakDay,
             'highMsgCount': highestMsgCount}
 
-        self.cursor.execute('''INSERT OR IGNORE INTO server(serverName, serverID,userName, userID, serverThreshold,msgCount,streakCounter, streaked, highestStreak, lastStreakDay, highMsgCount)
+        self.cursor.execute('''INSERT OR IGNORE INTO server (serverName, serverID,userName, userID, serverThreshold,msgCount,streakCounter, streaked, highestStreak, lastStreakDay, highMsgCount)
                                         VALUES (:serverName,:serverID, :userName,:userID, :serverThreshold,:msgCount,:streakCounter, :streaked, :highestStreak, :lastStreakDay, :highMsgCount)''',
                             userInfo
+                            )
+
+        userInfoGlobal = {
+            'serverID': guildID,
+            'serverName': None,
+            'userName': None,
+            'userID': userID,
+            'msgCount': 0,
+            'serverThreshold': 500,
+            'streakCounter': 0,
+            'streaked': 0,
+            'highestStreak': 0,
+            'lastStreakDay': 0,
+            'highMsgCount': 0}
+
+        self.cursor.execute('''INSERT OR IGNORE INTO  global (serverName, serverID,userName, userID, serverThreshold,msgCount,streakCounter, streaked, highestStreak, lastStreakDay, highMsgCount)
+                                                VALUES (:serverName,:serverID, :userName,:userID, :serverThreshold,:msgCount,:streakCounter, :streaked, :highestStreak, :lastStreakDay, :highMsgCount)''',
+                            userInfoGlobal
                             )
 
     def setNewDayStats(self):

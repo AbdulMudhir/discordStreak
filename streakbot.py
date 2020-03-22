@@ -21,19 +21,16 @@ class StreakBot(commands.Cog):
         self.bot = bot
         self.embed = None
         self.dataBase = DataBase('discordStreakBot.db')
-        # self.dataBase.createTable()
+        self.dataBase.createTable()
         self.dataBase.createGlobalTable()
-
-        # self.migrationToSQL()
-
-
+        self.migrationToSQL()
 
     @commands.Cog.listener()
     async def on_ready(self):
         print(f'We have logged in as {self.bot.user}\n')
         self.dateCheck.start()
         # self.dataBase.createTable()
-        # self.migrationToSQL()
+        #self.migrationToSQL()
 
     # @commands.Cog.listener()
     # async def on_command_error(self, ctx, error):
@@ -64,6 +61,7 @@ class StreakBot(commands.Cog):
 
                 except IndexError:
                     pass
+
         self.dataBase.commit()
 
     @commands.Cog.listener()
@@ -73,11 +71,8 @@ class StreakBot(commands.Cog):
         userID = user.id
         guildID = message.guild.id
 
-        print(guildID)
-
         # ignore bots
         if not user.bot:
-
 
             messageLength = len(message.content.split())
             # add the length of the message to the database to track
@@ -102,8 +97,8 @@ class StreakBot(commands.Cog):
         guildName = self.dataBase.updateServerName(guild) if self.dataBase.getServerName(guild) is None \
             else self.dataBase.getServerName(guild)
 
-        userName = self.dataBase.updateUserName(guild.id, user) if self.dataBase.getUserName(guild.id, user) is None \
-            else self.dataBase.getUserName(guild.id, user)
+        userName = self.dataBase.updateUserName(user) if self.dataBase.getUserName(user) is None \
+            else self.dataBase.getUserName(user)
 
     @commands.command()
     async def streak(self, ctx, *args):
@@ -111,7 +106,6 @@ class StreakBot(commands.Cog):
         # getting the guild the message was sent from
 
         guildID = ctx.guild.id
-
 
         # check if user has mentioned someone
         mention = ctx.message.mentions
@@ -155,7 +149,7 @@ class StreakBot(commands.Cog):
                 userName = data[2]
                 userID = data[3]
                 if userName is None:
-                    self.dataBase.updateUserName(serverID, self.bot.get_user(userID))
+                    self.dataBase.updateUserName(self.bot.get_user(userID))
                     userNames.append(self.bot.get_user(userID).name)
                 else:
                     # remove the deliminator as we would only need the name
@@ -165,8 +159,6 @@ class StreakBot(commands.Cog):
                     self.dataBase.updateServerName(self.bot.get_guild(serverID))
 
             userNames = '\n'.join(userNames)
-
-
 
             usersTotalMessages = '\n'.join([str(user[4]) for user in leaderBoard])
             usersStreakDays = '\n'.join([str(user[5]) for user in leaderBoard])
@@ -187,7 +179,7 @@ class StreakBot(commands.Cog):
         # return first 25
         leaderBoard = self.dataBase.viewGlobalLeaderBoard()
         # get the username of a user and remove anything after their deliminator #
-        #userNames = '\n'.join([user[1].split('#')[0] for user in leaderBoard])
+        # userNames = '\n'.join([user[1].split('#')[0] for user in leaderBoard])
 
         userNames = []
 
