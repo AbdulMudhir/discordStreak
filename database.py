@@ -67,6 +67,19 @@ class DataBase(sqlite3.Connection):
 
         self.commit()
 
+    def setMsgCountToUser(self, serverID, userID, amount):
+        # give the user a streak, set the streaked to True, set the highest streak if if it's greater than current streak
+
+        userInfo = {'userID': userID, 'serverID': serverID, 'amount': amount}
+
+        self.cursor.execute('''UPDATE server SET msgCount = :amount
+                       WHERE userID = :userID AND serverID = :serverID ;
+                       ''', userInfo)
+
+
+
+        self.commit()
+
     def addGlobalStreakUser(self, userID, streakDay):
 
         userInfo = {'userID': userID,'lastStreakDay': streakDay}
@@ -208,7 +221,7 @@ class DataBase(sqlite3.Connection):
 
     def viewGlobalLeaderBoard(self):
         self.cursor.execute('''SELECT  serverID, serverName, userName,userID,msgCount,streakCounter FROM global 
-        ORDER BY streakCounter DESC, userName ASC
+        ORDER BY  streakCounter DESC, msgCount DESC, userName ASC
         LIMIT 25''')
         return self.cursor.fetchall()
 

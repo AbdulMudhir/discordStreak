@@ -4,6 +4,8 @@ from discord.ext import commands
 from discord.ext import tasks
 from datetime import datetime
 from database import DataBase
+import dbl
+
 from discord.ext.commands import CommandError
 
 bot = commands.Bot(command_prefix='$')
@@ -20,11 +22,14 @@ class StreakBot(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.embed = None
-        self.dataBase = DataBase('discordStreakBot.db')
-        #self.dataBase.createTable()
-        #self.dataBase.createGlobalTable()
+        self.token = ""
+        self.dblpy = dbl.DBLClient(self.bot, self.token, autopost=True) # Autopost will post your guild count every 30 minutes
 
-        #self.migrationToSQL()
+        self.dataBase = DataBase('discordStreakBot.db')
+        # self.dataBase.createTable()
+        # self.dataBase.createGlobalTable()
+        #
+        # self.migrationToSQL()
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -41,6 +46,8 @@ class StreakBot(commands.Cog):
     #     if isinstance(error, CommandError):
     #         return
     #     raise error
+    async def on_guild_post(self):
+        print("Server count posted successfully")
 
     def migrationToSQL(self):
         for guildID in streakData:
@@ -79,6 +86,7 @@ class StreakBot(commands.Cog):
             # add the length of the message to the database to track
             self.dataBase.addMessageCount(guildID, userID, messageLength)
             # retrieve user message count
+            print(user.name)
             msgCount = self.dataBase.getMessageCount(guildID, user.id)
             # retrieve server message threshold
             guildThreshold = self.dataBase.getServerThreshold(guildID)
@@ -220,12 +228,12 @@ class StreakBot(commands.Cog):
             fields=[dict(name="**Users**", value=userNames, inline=True),
                     dict(name="Streak Total", value=usersStreakDays, inline=True),
                     dict(name="Total Words Sent", value=usersTotalMessages, inline=True)],
-            footer=dict(text=f"Total Words counted on {self.today}")
+            footer=dict(text=f"Total Words counted on {self.today} | Threshold for Global is 500 word Count")
         )
         await ctx.channel.send(embed=discord.Embed.from_dict(self.embed))
 
     # checking for the dates if its a new day
-    @tasks.loop(seconds=60)
+    @tasks.loop(minutes= 5)
     async def dateCheck(self):
 
         currentDay = datetime.today().date().strftime("%d-%m-%Y")
@@ -397,11 +405,11 @@ class StreakBot(commands.Cog):
 
         msgMilestone = {500: "",
                         1000: "",
-                        2000: "",
                         10000: "",
-                        20000: "",
                         50000: "",
-                        100000: ""}
+                        100000: "",
+                        250000: "",
+                        500000: ""}
 
         # loop through the milestone and check if the user has reached the milestone if they have give them diamond
         # else cross
@@ -464,16 +472,17 @@ class StreakBot(commands.Cog):
         testGuildID = 602439523284287508
 
         if ctx.author.id == 125604422007914497 and ctx.guild.id == testGuildID:
+
             mentionedUser = ctx.message.mentions[0].name
-            mentionedUserID = str(ctx.message.mentions[0].id)
+            mentionedUserID = ctx.message.mentions[0].id
             # give the user a streak point
-            streakData[guildMessageFrom][mentionedUserID][1] += int(totalStreak)
+            self.dataBase.addStreakToUser(testGuildID, mentionedUserID, self.today)
 
             await ctx.channel.send(f"{mentionedUser} has been given {totalStreak} streaks")
 
     # this is only for debugging not to be used for implementation
     @commands.command()
-    async def givemsg(self, ctx, totalStreak):
+    async def givemsg(self, ctx, amount):
 
         guildMessageFrom = str(ctx.guild.id)
         testGuildID = 602439523284287508
@@ -481,9 +490,9 @@ class StreakBot(commands.Cog):
             mentionedUser = ctx.message.mentions[0].name
             mentionedUserID = str(ctx.message.mentions[0].id)
             # give the user a streak point
-            streakData[guildMessageFrom][mentionedUserID][3]["highestMessageCount"] += int(totalStreak)
+            self.dataBase.setMsgCountToUser(testGuildID, mentionedUserID, amount)
 
-            await ctx.channel.send(f"{mentionedUser} has been given {totalStreak} MSG POINT")
+            await ctx.channel.send(f"{mentionedUser} MSG Point has been set to {amount} ")
 
 
 if __name__ == "__main__":
