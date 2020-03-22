@@ -11,8 +11,9 @@ class DataBase(sqlite3.Connection):
         sqlite3.Connection.__init__(self, dataBasePath)
         self.cursor = self.cursor()
 
-    def createTable(self, tableName):
-        self.cursor.execute(f"""CREATE TABLE {tableName} (
+    def createTable(self):
+
+        self.cursor.execute(f"""CREATE TABLE server (
                     serverID INTEGER,
                     serverName TEXT,
                     serverThreshold INTEGER,
@@ -80,7 +81,7 @@ class DataBase(sqlite3.Connection):
         self.cursor.execute('DELETE FROM server WHERE serverID = :serverID ', {'serverID': serverID})
         self.commit()
 
-    def removeUserFromServer(self, serverID, userID):
+    def removeUser(self, serverID, userID):
         self.cursor.execute('DELETE FROM server WHERE serverID = :serverID AND userID = :userID',
                             {'serverID': serverID, 'userID': userID})
         self.commit()
@@ -89,12 +90,12 @@ class DataBase(sqlite3.Connection):
         # add user to the database
         # add singular user to the database
         # get the server's threshold
-        self.cursor.execute('SELECT serverThreshold FROM server WHERE serverID = ?', (serverID,))
+        self.cursor.execute('SELECT serverThreshold FROM server WHERE serverID = ?', (server.id,))
         serverThreshold = self.cursor.fetchone()[0]
         userInfo = {
             'serverID': server.id,
             'serverName': server.name,
-            'userName': user.name
+            'userName': f"{user.name}#{user.discriminator}",
             'userID': user.id,
             'msgCount': 0,
             'serverThreshold': serverThreshold,
@@ -104,32 +105,34 @@ class DataBase(sqlite3.Connection):
             'lastStreakDay': "Never Streaked",
             'highMsgCount': 0}
 
-        self.cursor.execute('''INSERT OR IGNORE INTO server(serverName, serverID,userName, userID, serverThreshold,msgCount,streakCounter, streaked, highestStreak, lastStreakDay, highMsgCount)
-                VALUES (:serverName,:serverID,userName, :userID, :serverThreshold,:msgCount,:streakCounter, :streaked, :highestStreak, :lastStreakDay, :highMsgCount)''',
+        self.cursor.execute('''INSERT OR IGNORE INTO server(serverName, serverID, userName, userID, serverThreshold,msgCount,streakCounter, streaked, highestStreak, lastStreakDay, highMsgCount)
+                VALUES (:serverName,:serverID,:userName, :userID, :serverThreshold,:msgCount,:streakCounter, :streaked, :highestStreak, :lastStreakDay, :highMsgCount)''',
                             userInfo
                             )
         self.commit()
 
-    def addNewGuildUsers(self, server, users):
+    def addNewGuild(self, server):
         # looping through the list of users that get passed on
         # will  be used when a guild joins
-        for user in users:
-            userInfo = {
-                'serverID': server.id,
-                'serverName': server.name,
-                'userName': user.name,
-                'userID': user.id,
-                'msgCount': 0,
-                'serverThreshold': 100,
-                'streakCounter': 0,
-                'streaked': 0,
-                'highestStreak': 0,
-                'lastStreakDay': "Never Streaked",
-                'highMsgCount': 0}
+        for user in server.members:
+            # if the user is not  a bot
+            if not user.bot:
 
-            self.cursor.execute('''INSERT OR IGNORE INTO server(serverName, serverID,userName, userID, serverThreshold,msgCount,streakCounter, streaked, highestStreak, lastStreakDay, highMsgCount)
-                            VALUES (:serverName,:serverID, :userName,:userID, :serverThreshold,:msgCount,:streakCounter, :streaked, :highestStreak, :lastStreakDay, :highMsgCount)''',
-                                userInfo
-                                )
-            self.commit()
-print("commit test")
+                userInfo = {
+                    'serverID': server.id,
+                    'serverName': server.name,
+                    'userName': f"{user.name}#{user.discriminator}",
+                    'userID': user.id,
+                    'msgCount': 0,
+                    'serverThreshold': 100,
+                    'streakCounter': 0,
+                    'streaked': 0,
+                    'highestStreak': 0,
+                    'lastStreakDay': "Never Streaked",
+                    'highMsgCount': 0}
+
+                self.cursor.execute('''INSERT OR IGNORE INTO server(serverName, serverID,userName, userID, serverThreshold,msgCount,streakCounter, streaked, highestStreak, lastStreakDay, highMsgCount)
+                                VALUES (:serverName,:serverID, :userName,:userID, :serverThreshold,:msgCount,:streakCounter, :streaked, :highestStreak, :lastStreakDay, :highMsgCount)''',
+                                    userInfo
+                                    )
+                self.commit()
