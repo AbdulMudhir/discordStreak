@@ -6,7 +6,7 @@ from datetime import datetime
 from database import DataBase
 from discord.ext.commands import CommandError
 
-bot = commands.Bot(command_prefix='!')
+bot = commands.Bot(command_prefix='$')
 
 usersInCurrentGuild = {}
 
@@ -41,58 +41,48 @@ class StreakBot(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
-        pass
-        # user = message.author
-        # userId = str(message.author.id)
-        # messageLength = len(message.content.split())
-        # guildMessageFrom = str(message.guild.id)
-        #
-        # # the threshold(total messages to achieve to streak) the guild has been set to
-        # guildMessageThreshold = streakData[guildMessageFrom]['serverInfo']["wordcount"]
-        #
-        # if not user.bot:
-        #     # if the user is not a bot we will add a streak (only if they meet the criteria)
-        #     self.addUserStreak(userId, guildMessageFrom, messageLength, guildMessageThreshold)
 
-    def addUserStreak(self, userId, guildMessageFrom, messageLength, guildMessageThreshold):
+        user = message.author
+        userID = user.id
+        guildID = message.guild.id
 
-        # load the current users  total messages
-        currentUserTotalMessage = streakData[guildMessageFrom][userId][0]
+        # ignore bots
+        if not user.bot:
 
-        # check if they had streaked already
-        streakedToday = streakData[guildMessageFrom][userId][2]
+            messageLength = len(message.content.split())
+            # add the length of the message to the database to track
+            self.dataBase.addMessageCount(guildID, userID, messageLength)
+            # retrieve user message count
+            msgCount = self.dataBase.getMessageCount(guildID, user.id)
+            # retrieve server message threshold
+            guildThreshold = self.dataBase.getServerThreshold(guildID)
+            # check if they had streaked
+            streaked = self.dataBase.checkUserStreaked(guildID, userID)
 
-        # adding total total messages to the user
-        streakData[guildMessageFrom][userId][0] += messageLength
-        # keep track of total message sent in user life time with the bot
-        streakData[guildMessageFrom][userId][3]["highestMessageCount"] += messageLength
+            # give streak if they had streaked.
+            if msgCount >= guildThreshold and not streaked:
+                self.dataBase.addStreakToUser(guildID, userID, self.today)
 
-        userHighestWordCount = streakData[guildMessageFrom][userId][3]["highestMessageCount"]
-
-        # if user has not been given a streak for today but has sent over the guild threshold
-        if not streakedToday and currentUserTotalMessage >= guildMessageThreshold:
-            # give the user a streak point
-            streakData[guildMessageFrom][userId][1] += 1
-
-            streakData[guildMessageFrom][userId][3]['lastStreakDay'] = self.today
-
-            userHighestStreak = streakData[guildMessageFrom][userId][3]["highestStreak"]
-            userCurrentStreak = streakData[guildMessageFrom][userId][1]
-
-            # change the boolean to True as they have received a streak for today
-            streakData[guildMessageFrom][userId][2] = True
-
-            # keeping track of the user's current streak is higher or equal to the highest streak
-            if userCurrentStreak >= userHighestStreak:
-                # if current streak is higher than highest streak then we set highest streak to current streak
-                streakData[guildMessageFrom][userId][3]["highestStreak"] = userCurrentStreak
-
-    # streak commands
     @commands.command()
     async def streak(self, ctx, *args):
 
         # getting the guild the message was sent from
-        guildMessageFrom = str(ctx.guild.id)
+
+        guildID = ctx.guild.id
+
+        # return first 25
+        leaderBoard = self.dataBase.viewLeaderBoard(guildID)
+
+        # get the username of a user and remove anything after their deliminator #
+        userNames = '\n'.join([user[0].split('#')[0] for user in leaderBoard])
+
+        # userName = []
+        #
+        # for user in leaderBoard:
+        #     userName = user[0].split('#')[0]
+
+        usersTotalMessages = '\n'.join([str(user[1]) for user in leaderBoard])
+        usersStreakDays = '\n'.join([str(user[2]) for user in leaderBoard])
 
         # check if user has mentioned someone
         mention = ctx.message.mentions
@@ -108,7 +98,8 @@ class StreakBot(commands.Cog):
             if not mention[0].bot:
                 # send the information over to another method to send an embed for that user
                 # passing over ctx to send message to the channel
-                await self.mentionStreak(ctx, userMentioned, guildMessageFrom)
+
+                await self.mentionStreak(ctx, userMentioned, guildID)
 
         # check if there's any other messages that were sent
         elif otherMessage:
@@ -117,48 +108,9 @@ class StreakBot(commands.Cog):
             otherMessage = args[0]
 
             if otherMessage == "me":
-                await self.mentionStreak(ctx, ctx.author, guildMessageFrom)
-
+                await self.mentionStreak(ctx, ctx.author, guildID)
 
         else:
-            # retrieving the data for that guild
-            streakUsersFromGuild = streakData[guildMessageFrom]
-
-            # obtain the users from that specific guild all the way from the end ignoring word count for guild
-            usersID = list(streakUsersFromGuild.keys())[:-1]
-
-            # obtain the users from that specific guild all the way from the end ignoring word count for guild
-            usersData = list(streakUsersFromGuild.values())[:-1]
-
-            # unpack the total messages, and streak days
-            totalMessages, streakDays, *_ = list(zip(*usersData))
-
-            # sorting the users based on the highest streak (will be changing to streak days)
-            streakDays, usersID, totalMessages, = zip(*sorted(zip(streakDays, usersID, totalMessages, ), reverse=True))
-
-            # converting the id to their Original Names
-            userNames = "__\n__".join([self.bot.get_user(int(user)).name for user in usersID[0:25]])
-
-            # creating a String containing all the total messages
-            usersTotalMessages = "\n".join([str(total) for total in totalMessages[0:25]])
-
-            # creating a String containing all the streaks
-            usersStreakDays = "\n".join([str(streak) for streak in streakDays[0:25]])
-
-            # usersStreakDays = []
-            #
-            # for streak in streakDays[0:25]:
-            #     if 3 <= streak < 100:
-            #         usersStreakDays.append(f"{streak} :fire:")
-            #
-            #     elif streak >= 100:
-            #         usersStreakDays.append(f"{streak} :fire: :100: ")
-            #
-            #     else:
-            #         usersStreakDays.append(str(streak))
-            #
-            # usersStreakDays = "\n".join(usersStreakDays)
-
             self.embed = dict(
                 title=f"**==STREAK LEADERBOARD==**",
                 color=9127187,
@@ -228,27 +180,23 @@ class StreakBot(commands.Cog):
     @commands.Cog.listener()
     async def on_member_join(self, user):
 
-        print(f"New user has joined {user.guild.name}")
-
         # add the user to the correct server
         if not user.bot:
+            print(f"New user has joined {user.guild.name}")
             self.dataBase.addUser(user.guild, user)
 
     @commands.Cog.listener()
     async def on_member_remove(self, user):
-
 
         # remove the user from data as they have left
         if not user.bot:
             print(f"user has left  {user.guild.name}")
             self.dataBase.removeUser(user.guild.id, user.id)
 
-
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
 
         print(f"New Guild Has Joined {guild.name}")
-
         # add new guild to the database
         self.dataBase.addNewGuild(guild)
 
@@ -256,7 +204,6 @@ class StreakBot(commands.Cog):
     async def on_guild_remove(self, guild):
 
         print(f"A Guild Has left {guild.name}")
-
         self.dataBase.removeServer(guild.id)
 
     @commands.command()
@@ -321,38 +268,29 @@ class StreakBot(commands.Cog):
 
     async def mentionStreak(self, ctx, user, guildID):
 
-        # retrieving the data for that guild
-        streakUsersFromGuild = streakData[guildID]
-        guildMessageThreshold = streakUsersFromGuild['serverInfo']["wordcount"]
-        # the user's Name
-        userName = user.name
+        userName, MsgCount, streakCounter, streaked, highestStreak, lastStreakDay, highMsgCount \
+            = self.dataBase.getUserInfo(guildID, user.id)
 
-        # unpack the user's data
-        userTotalMessages, userTotalStreak, _, extraInfo = streakUsersFromGuild[str(user.id)]
+        guildThreshold = self.dataBase.getServerThreshold(guildID)
 
-        # last time the user streaked
-        lastStreakedDate = extraInfo['lastStreakDay']
-        userHighestMessageCount = extraInfo["highestMessageCount"]
-        userHighestStreak = extraInfo["highestStreak"]
-
-        # adding emotes based on different stages of streak
+        # adding emotes based on different stages of streak for current streak only
         # if user has reached 3 or more streak day they get fire streak
-        if userTotalStreak >= 3:
+        if streakCounter >= 3:
 
-            userStreakFormat = f"{userTotalStreak} :fire:"
+            userStreakFormat = f"{streakCounter} :fire:"
 
             #  if user reached over 100 streaks they get #100 emote
-            if userTotalStreak >= 100:
-                userStreakFormat = f"{userTotalStreak} :fire: :100: "
+            if streakCounter >= 100:
+                userStreakFormat = f"{streakCounter} :fire: :100: "
 
         else:
-            userStreakFormat = userTotalStreak
+            userStreakFormat = streakCounter
 
         # message to be put in the footer if they had achieved a streak
         streakClaimedMessage = "You have claimed your streak for today"
 
         # footer message to indicate if the user has received a streak for today
-        footerMessage = streakClaimedMessage if userTotalMessages >= guildMessageThreshold else f"Word count till streak {guildMessageThreshold - userTotalMessages}" \
+        footerMessage = streakClaimedMessage if MsgCount >= guildThreshold else f"Word count till streak {guildThreshold -MsgCount}" \
  \
             # userTotalMessages = userTotalMessages if userTotalMessages < 100 else f"{userTotalMessages} "
 
@@ -361,12 +299,12 @@ class StreakBot(commands.Cog):
             author={"icon_url": f"{user.avatar_url}", "url": f"{user.avatar_url}",
                     "name": f"{userName}'s Profile Summary"},
             fields=[
-                dict(name="**Highest Streak**", value=userHighestStreak, inline=True),
+                dict(name="**Highest Streak**", value=highestStreak, inline=True),
                 dict(name="**Current Streak**", value=userStreakFormat, inline=True),
                 dict(name=":book: **Other Stats**",
-                     value=f":small_blue_diamond: **Last Streaked:**  \u200b {lastStreakedDate}\n"
-                           f":small_blue_diamond: **Current Word Count:**  \u200b {userTotalMessages:0,}\n"
-                           f":small_blue_diamond: **Total Word Count:**  \u200b {userHighestMessageCount:0,}",
+                     value=f":small_blue_diamond: **Last Streaked:**  \u200b {lastStreakDay}\n"
+                           f":small_blue_diamond: **Current Word Count:**  \u200b {MsgCount:0,}\n"
+                           f":small_blue_diamond: **Total Word Count:**  \u200b {highMsgCount:0,}",
                      inline=False),
 
             ],
@@ -377,7 +315,7 @@ class StreakBot(commands.Cog):
         )
 
         # check if the user has achieved any of the milestones
-        self.achievementUnlocks(userTotalStreak, userHighestMessageCount)
+        self.achievementUnlocks(highestStreak, highMsgCount)
 
         await ctx.channel.send(embed=discord.Embed.from_dict(self.embed))
 

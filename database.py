@@ -66,15 +66,30 @@ class DataBase(sqlite3.Connection):
 
         self.commit()
 
+    def getUserInfo(self, serverID, userID):
+        self.cursor.execute(
+            '''SELECT userName,msgCount,streakCounter, streaked, highestStreak, lastStreakDay,highMsgCount
+            FROM server WHERE serverID = :serverID AND userID = :userID ''', {'serverID': serverID, 'userID': userID})
+
+        return self.cursor.fetchone()
+
+    def getServerThreshold(self, serverID):
+        self.cursor.execute('SELECT serverThreshold FROM server WHERE serverID = :serverID ;',
+                            {'serverID': serverID})
+        return self.cursor.fetchone()[0]
+
+    def getMessageCount(self, serverID, userID):
         # retrieve the amount of message the user current has now
         self.cursor.execute('SELECT msgCount FROM server WHERE serverID = :serverID AND userID = :userID ;',
                             {'userID': userID, 'serverID': serverID})
-
+        # retrieve message count
         return self.cursor.fetchone()[0]
 
-    def serverThreshold(self, serverID, thresholdAmount):
+    def setServerThreshold(self, serverID, thresholdAmount):
         self.cursor.execute(' UPDATE server SET serverThreshold = :threshAmount WHERE serverID = :serverID ;',
                             {'serverID': serverID, 'thresholdAmount': thresholdAmount})
+
+        self.commit()
 
     def removeServer(self, serverID):
         # remove the server from the database
@@ -85,6 +100,19 @@ class DataBase(sqlite3.Connection):
         self.cursor.execute('DELETE FROM server WHERE serverID = :serverID AND userID = :userID',
                             {'serverID': serverID, 'userID': userID})
         self.commit()
+
+    def addUserName(self, serverID, user):
+        self.cursor.execute(' UPDATE server SET userName = :userName WHERE serverID = :serverID AND userID = :userID;',
+                            {'serverID': serverID, 'userID': user.id, 'userName': f"{user.name}#{user.discriminator}"})
+
+        self.commit()
+
+    def viewLeaderBoard(self, serverID):
+        self.cursor.execute('''SELECT  userName,msgCount,streakCounter FROM server 
+        WHERE serverID =?
+        ORDER BY streakCounter DESC, userName ASC
+        LIMIT 25''', (serverID,))
+        return self.cursor.fetchall()
 
     def addUser(self, server, user):
         # add user to the database
@@ -117,7 +145,6 @@ class DataBase(sqlite3.Connection):
         for user in server.members:
             # if the user is not  a bot
             if not user.bot:
-
                 userInfo = {
                     'serverID': server.id,
                     'serverName': server.name,
