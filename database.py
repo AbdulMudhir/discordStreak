@@ -78,6 +78,8 @@ class DataBase(sqlite3.Connection):
                 streakCounter ELSE highestStreak END  WHERE userID = :userID ''',
                             userInfo)
 
+        self.commit()
+
     def checkUserStreaked(self, serverID, userID):
         # check if the user has streaked
         self.cursor.execute('SELECT streaked FROM server WHERE serverID = :serverID AND userID = :userID ;',
@@ -100,11 +102,19 @@ class DataBase(sqlite3.Connection):
         self.cursor.execute(
             'UPDATE server SET serverName =:serverName WHERE serverID = :serverID; ',
             {'serverID': server.id, 'serverName': server.name})
+
+        self.cursor.execute(
+            'UPDATE global SET serverName =:serverName WHERE serverID = :serverID; ',
+            {'serverID': server.id, 'serverName': server.name})
+
         self.commit()
 
     def updateUserName(self, user):
         self.cursor.execute(
             'UPDATE server SET userName =:userName WHERE userID =:userID; ',
+            {'userID': user.id, 'userName': f"{user.name}#{user.discriminator}"})
+        self.cursor.execute(
+            'UPDATE global SET userName =:userName WHERE userID =:userID; ',
             {'userID': user.id, 'userName': f"{user.name}#{user.discriminator}"})
         self.commit()
 
@@ -316,7 +326,7 @@ class DataBase(sqlite3.Connection):
             'streakCounter': 0,
             'streaked': 0,
             'highestStreak': 0,
-            'lastStreakDay': 0,
+            'lastStreakDay': "Never Streaked",
             'highMsgCount': 0}
 
         self.cursor.execute('''INSERT OR IGNORE INTO  global (serverName, serverID,userName, userID, serverThreshold,msgCount,streakCounter, streaked, highestStreak, lastStreakDay, highMsgCount)
@@ -328,4 +338,6 @@ class DataBase(sqlite3.Connection):
         print("i am here 3")
         self.cursor.execute(
             'UPDATE server SET msgCount = 0, streaked = 0, streakCounter = CASE WHEN msgCount < serverThreshold THEN 0 ELSE streakCounter END')
+        self.cursor.execute(
+            'UPDATE global SET msgCount = 0, streaked = 0, streakCounter = CASE WHEN msgCount < serverThreshold THEN 0 ELSE streakCounter END')
         self.commit()

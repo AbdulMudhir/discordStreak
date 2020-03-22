@@ -21,10 +21,10 @@ class StreakBot(commands.Cog):
         self.bot = bot
         self.embed = None
         self.dataBase = DataBase('discordStreakBot.db')
-        self.dataBase.createTable()
-        self.dataBase.createGlobalTable()
+        #self.dataBase.createTable()
+        #self.dataBase.createGlobalTable()
 
-        self.migrationToSQL()
+        #self.migrationToSQL()
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -89,6 +89,7 @@ class StreakBot(commands.Cog):
             streakedGlobal = self.dataBase.checkUserGlobalStreaked(userID)
             globalThreshold = self.dataBase.getGlobalThreshold()
             msgCountGlobal = self.dataBase.getMessageCountGlobal(userID)
+
 
             self.fillNoneData(message.guild, user)
 
@@ -198,7 +199,7 @@ class StreakBot(commands.Cog):
             userName = data[2]
             userID = data[3]
             if userName is None:
-                self.dataBase.updateUserName(serverID, self.bot.get_user(userID))
+                self.dataBase.updateUserName(self.bot.get_user(userID))
                 userNames.append(self.bot.get_user(userID).name)
             else:
                 userNames.append(userName)
@@ -229,7 +230,7 @@ class StreakBot(commands.Cog):
 
         currentDay = datetime.today().date().strftime("%d-%m-%Y")
 
-        # currentDay = '23/03/2020'
+        #currentDay = '23/03/2020'
         print(self.today)
         if self.today != currentDay:
             # keeping tracking of the day  before
