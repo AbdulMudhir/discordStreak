@@ -25,8 +25,8 @@ class StreakBot(commands.Cog):
         self.dblpy = dbl.DBLClient(self.bot, self.token, autopost=True) # Autopost will post your guild count every 30 minutes
 
         self.dataBase = DataBase('discordStreakBot.db')
-        self.dataBase.createTable()
-        self.dataBase.createGlobalTable()
+        #self.dataBase.createTable()
+        #self.dataBase.createGlobalTable()
        # self.migrationToSQL()
 
     @commands.Cog.listener()
@@ -208,14 +208,16 @@ class StreakBot(commands.Cog):
         # userNames = '\n'.join([user[1].split('#')[0] for user in leaderBoard])
 
         userNames = []
-
+        # this is only for debugging from old Json to new SQL
         for data in leaderBoard:
             serverID = data[0]
             serverName = data[1]
             userName = data[2]
             userID = data[3]
             if userName is None:
+                # if the username in the database is empty, we will get the username and populate the sql
                 self.dataBase.updateUserName(self.bot.get_user(userID))
+
                 userNames.append(self.bot.get_user(userID).name)
             else:
                 userNames.append(userName)
@@ -294,6 +296,7 @@ class StreakBot(commands.Cog):
         # how many user the bot can see (including bots)
         totalUsers = len(self.bot.users)
 
+        # how many channels the bot can see
         totalChannels = sum([len(guild.channels) for guild in self.bot.guilds])
 
         latency = int(self.bot.latency * 100)
