@@ -8,7 +8,7 @@ start = time.time()
 class DataBase(sqlite3.Connection):
 
     def __init__(self, dataBasePath):
-        sqlite3.Connection.__init__(self, dataBasePath)
+        sqlite3.Connection.__init__(self, dataBasePath,  timeout =10)
         self.cursor = self.cursor()
 
     def createTable(self):
@@ -162,6 +162,8 @@ class DataBase(sqlite3.Connection):
         self.cursor.execute(
             'UPDATE server SET msgCount = msgCount + :msgCount, highMsgCount = highMsgCount + :msgCount WHERE serverID = :serverID AND userID = :userID; ',
             userInfo)
+
+        self.commit()
 
         self.cursor.execute(
             'UPDATE global SET msgCount = msgCount + :msgCount, highMsgCount = highMsgCount + :msgCount WHERE userID = :userID; ',
@@ -362,7 +364,7 @@ class DataBase(sqlite3.Connection):
                             )
 
     def setNewDayStats(self):
-        print("i am here 3")
+        
         self.cursor.execute(
             'UPDATE server SET msgCount = 0, streaked = 0, streakCounter = CASE WHEN msgCount < serverThreshold THEN 0 ELSE streakCounter END')
         self.cursor.execute(

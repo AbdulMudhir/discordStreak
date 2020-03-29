@@ -4,17 +4,17 @@ from discord.ext import commands
 from discord.ext import tasks
 from datetime import datetime
 from database import DataBase
+from reaction_page import Paginator
 import dbl
 
 from discord.ext.commands import CommandError
 
-bot = commands.Bot(command_prefix='!')
+bot = commands.Bot(command_prefix='$')
 
-
-#streakData = json.load(open("streak.json", "r+"))
 
 
 class StreakBot(commands.Cog):
+
     today = datetime.today().date().strftime("%d-%m-%Y")
     yesterday = None
 
@@ -24,9 +24,11 @@ class StreakBot(commands.Cog):
         self.token = ""
         self.dblpy = dbl.DBLClient(self.bot, self.token, autopost=True) # Autopost will post your guild count every 30 minutes
 
+
         self.dataBase = DataBase('discordStreakBot.db')
-        #self.dataBase.createTable()
-        #self.dataBase.createGlobalTable()
+
+       # self.dataBase.createTable()
+       # self.dataBase.createGlobalTable()
        # self.migrationToSQL()
 
     @commands.Cog.listener()
@@ -35,39 +37,32 @@ class StreakBot(commands.Cog):
         self.dateCheck.start()
 
 
-    @commands.Cog.listener()
-    async def on_command_error(self, ctx, error):
-        """
-        Stop raising error for commands bugs to much
-        """
-        if isinstance(error, CommandError):
-            return
-        raise error
+    # @commands.Cog.listener()
+    # async def on_command_error(self, ctx, error):
+    #     if isinstance(error, CommandError):
+    #         return
+    #     raise error
     async def on_guild_post(self):
         print("Server count posted successfully")
+                
 
-    # def migrationToSQL(self):
-    #     for guildID in streakData:
-    #         serverThreshold = streakData[guildID]['serverInfo']["wordcount"]
-    #         guildID = guildID
-    #
-    #         for userID in streakData[guildID]:
-    #             try:
-    #                 if userID != 'serverInfo':
-    #                     msgCount = streakData[guildID][userID][0]
-    #                     streakCounter = streakData[guildID][userID][1]
-    #                     streaked = 1 if streakData[guildID][userID][2] else 0
-    #                     highestStreak = streakData[guildID][userID][3]['highestStreak']
-    #                     lastStreakDay = streakData[guildID][userID][3]['lastStreakDay']
-    #                     highestMessageCount = streakData[guildID][userID][3]['highestMessageCount']
-    #                     self.dataBase.addJsonGuildToSQL(guildID, serverThreshold, userID, msgCount, streakCounter,
-    #                                                     streaked,
-    #                                                     highestStreak, lastStreakDay, highestMessageCount)
-    #
-    #             except IndexError:
-    #                 pass
-    #
-    #     self.dataBase.commit()
+    @commands.Cog.listener()
+    async def on_voice_state_update(self, user, voice_state_before, current_user_voice_status):
+        user = user
+        user_id = user.id
+        guild_id_user_from = user.guild.id
+        voice_channel_before = voice_state_before
+        current_user_voice_channel = current_user_voice_status
+
+        if not user.bot:
+
+            print(user)
+            print(current_user_voice_channel)
+
+
+
+
+
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -81,6 +76,7 @@ class StreakBot(commands.Cog):
         if not user.bot:
 
             messageLength = len(message.content.split())
+            print("here i am")
             # add the length of the message to the database to track
             self.dataBase.addMessageCount(guildID, userID, messageLength)
             # retrieve user message count
@@ -157,6 +153,7 @@ class StreakBot(commands.Cog):
                 await self.mentionStreak(ctx, ctx.author, guildID)
 
             elif otherMessage == "global":
+
                 await self.globalLeaderBoard(ctx)
         else:
 
@@ -186,7 +183,7 @@ class StreakBot(commands.Cog):
 
             userNames = '\n'.join(userNames)
 
-            usersTotalMessages = '\n'.join([str(user[4]) for user in leaderBoard])
+            usersTotalMessages = '\n'.join([f'{user[4]:0,}' for user in leaderBoard])
             usersStreakDays = '\n'.join([str(user[5]) for user in leaderBoard])
 
             self.embed = dict(
@@ -202,22 +199,21 @@ class StreakBot(commands.Cog):
             await ctx.channel.send(embed=discord.Embed.from_dict(self.embed))
 
     async def globalLeaderBoard(self, ctx):
+
         # return first 25
         leaderBoard = self.dataBase.viewGlobalLeaderBoard()
         # get the username of a user and remove anything after their deliminator #
         # userNames = '\n'.join([user[1].split('#')[0] for user in leaderBoard])
 
         userNames = []
-        # this is only for debugging from old Json to new SQL
+
         for data in leaderBoard:
             serverID = data[0]
             serverName = data[1]
             userName = data[2]
             userID = data[3]
             if userName is None:
-                # if the username in the database is empty, we will get the username and populate the sql
                 self.dataBase.updateUserName(self.bot.get_user(userID))
-
                 userNames.append(self.bot.get_user(userID).name)
             else:
                 userNames.append(userName)
@@ -227,7 +223,7 @@ class StreakBot(commands.Cog):
 
         userNames = '\n'.join(userNames)
 
-        usersTotalMessages = '\n'.join([str(user[4]) for user in leaderBoard])
+        usersTotalMessages = '\n'.join([f'{user[4]:0,}' for user in leaderBoard])
         usersStreakDays = '\n'.join([str(user[5]) for user in leaderBoard])
 
         self.embed = dict(
@@ -237,7 +233,7 @@ class StreakBot(commands.Cog):
                 "url": "https://cdn4.iconfinder.com/data/icons/miscellaneous-icons-2-1/200/misc_movie_leaderboards3-512.png"},
             fields=[dict(name="**Users**", value=userNames, inline=True),
                     dict(name="Streak Total", value=usersStreakDays, inline=True),
-                    dict(name="Total Words Sent", value=usersTotalMessages, inline=True)],
+                    dict(name="Words Sent Today", value=usersTotalMessages, inline=True)],
             footer=dict(text=f"Total Words counted on {self.today} | Threshold for Global is 500 word Count")
         )
         await ctx.channel.send(embed=discord.Embed.from_dict(self.embed))
@@ -249,7 +245,7 @@ class StreakBot(commands.Cog):
         currentDay = datetime.today().date().strftime("%d-%m-%Y")
 
         #currentDay = '23/03/2020'
-        print(self.today)
+    
         if self.today != currentDay:
             # keeping tracking of the day  before
             yesterday = self.today
@@ -296,7 +292,6 @@ class StreakBot(commands.Cog):
         # how many user the bot can see (including bots)
         totalUsers = len(self.bot.users)
 
-        # how many channels the bot can see
         totalChannels = sum([len(guild.channels) for guild in self.bot.guilds])
 
         latency = int(self.bot.latency * 100)
@@ -440,7 +435,7 @@ class StreakBot(commands.Cog):
         achievements = dict(name="**Streak Milestones**",
                             value=f"{achievementStreakCheck}", inline=True)
 
-        achievement2 = dict(name="**Words Milestones**",
+        achievement2 = dict(name="**Total Words Milestones**",
                             value=f"{achievementMsgCheck}", inline=True)
 
         bottomBar = dict(name="=====**More Achievements To Come**====", value=f"\u200b")
@@ -512,7 +507,7 @@ class StreakBot(commands.Cog):
 if __name__ == "__main__":
     bot.add_cog(StreakBot(bot))
     bot.remove_command("help")
-    bot.run("")
+    bot.run(open(r"C:\Users\Abdul\PycharmProjects\discordStreak\backup\token.txt").read())
 
 """
 Methods to update when changing Json
