@@ -20,18 +20,19 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
         self.embed = None
         self.token = ""
         self.dblpy = dbl.DBLClient(self.bot, self.token,
-                                   autopost=True)  # Autopost will post your guild count every 30 minutes
+                                   autopost=True)  # Auto post will post your guild count every 30 minutes
 
         self.dataBase = DataBase('discordStreakBot.db')
-
-    # self.dataBase.createTable()
-    # self.dataBase.createGlobalTable()
-    # self.migrationToSQL()
+        #
+        # self.dataBase.createTable()
+        # self.dataBase.createGlobalTable()
+        # self.dataBase.add_voice_column()
 
     @commands.Cog.listener()
     async def on_ready(self):
         print(f'We have logged in as {self.bot.user}\n')
         self.dateCheck.start()
+        # self.scanCurrentServer()
 
     # @commands.Cog.listener()
     # async def on_command_error(self, ctx, error):
@@ -41,6 +42,123 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
 
     async def on_guild_post(self):
         print("Server count posted successfully")
+
+    @commands.Cog.listener()
+    async def on_voice_state_update(self, user, previous_voice_state, current_voice_state):
+
+        user = user
+        guild = user.guild
+
+        # check if the guild wants to track
+        if self.dataBase.track_voice(guild):
+
+            # check if the user has already streaked other wise ignore
+            if not self.dataBase.checkUserStreaked(guild.id, user.id):
+
+                # if the user just recently joined a voice channel
+                joined_a_voice_channel = True if previous_voice_state.channel is None else False
+                user_left_voice_channel = True if current_voice_state.channel is None else False
+                user_current_mute_state = True if current_voice_state.mute or current_voice_state.self_mute else False
+
+                # if the user is not muted prior to joining voice call or current state
+                if not user_current_mute_state and joined_a_voice_channel:
+                    print("user has joined a voice channel")
+                    self.dataBase.set_voice_join_time(guild, user)
+
+                elif user_left_voice_channel and user_current_mute_state:
+                    print("user has left voice channel while muted")
+
+                elif user_left_voice_channel and not user_current_mute_state:
+                    self.dataBase.update_voice_time(guild, user)
+                    print("user has left voice channel")
+
+                elif user_current_mute_state and joined_a_voice_channel:
+                    print("user has joined the channel while muted")
+
+                elif user_current_mute_state:
+                    print("user is muted ")
+                    self.dataBase.update_voice_time(guild, user)
+
+                elif not user_current_mute_state:
+                    print("user has un-muted")
+                    self.dataBase.set_voice_join_time(guild, user)
+
+
+    @commands.command(brief="Admin", help="``!voice enable enable`` Enable voice to be counted for streaking\n"
+                                          "``!voice disable`` Disable voice to be counted for streaking\n"
+                                          "``!voice threshold (amount) optional:(minute|hour)``\n"
+                                          "Set the threshold for how long the user needs to be in call to gain a streak"
+                                          "user's that are muted will not be counted to words tracking total time they were in the call")
+    async def voice(self, ctx, *args):
+
+        if len(args) <= 4:
+
+            guild = ctx.author.guild
+
+            command = ' '.join(args)
+
+            if command == "enable":
+
+                # check if the guild command has already been enabled otherwise enable it
+                if not self.dataBase.track_voice(guild):
+                    self.dataBase.enable_track_voice(guild)
+                    await ctx.channel.send("Voice channels will now be counted for streak!", delete_after=10)
+
+                else:
+                    await ctx.channel.send("Voice channels are already counted for streak!", delete_after=10)
+
+            # check if the guild command was already disabled other wise enable it
+            elif command == "disable":
+                if self.dataBase.track_voice(guild):
+                    self.dataBase.disable_track_voice(guild)
+                    await ctx.channel.send("Voice channels will not be counted for streak!", delete_after=10)
+                else:
+                    await ctx.channel.send("Voice channels are already disabled for streak!", delete_after=10)
+
+            # will be used to track the
+            elif 'threshold' in command:
+
+                # unpack the threshold amount to be set
+                command, threshold_amount, *other_arguments = args
+
+                # try convert the given digit into
+                try:
+                    threshold_amount = int(threshold_amount)
+
+                except ValueError:
+
+                    await ctx.channel.send("Invalid digit sent")
+
+                # if no other arguments were passed in (minutes | hours)
+                if not other_arguments:
+
+                    self.dataBase.set_voice_guild_threshold(guild, threshold_amount)
+
+                    await ctx.channel.send(
+                        f"New voice threshold has been set to {threshold_amount:0,} seconds for {guild.name}\n",
+                        delete_after=10)
+
+                # if the user has given minutes argument convert it to seconds then update database
+                elif other_arguments[0].startswith('minute'):
+
+                    convert_threshold_amount = threshold_amount * 60
+
+                    self.dataBase.set_voice_guild_threshold(guild, convert_threshold_amount)
+
+                    await ctx.channel.send(
+                        f"New voice threshold has been set to {threshold_amount:0,} minute for {guild.name}\n",
+                        delete_after=10)
+
+                # if the user has given hour argument convert it to seconds then update database
+                elif other_arguments[0].startswith('hour'):
+
+                    convert_threshold_amount = (threshold_amount * 60) * 60
+
+                    self.dataBase.set_voice_guild_threshold(guild, convert_threshold_amount)
+
+                    await ctx.channel.send(
+                        f"New voice threshold has been set to {threshold_amount:0,} hour for {guild.name}\n",
+                        delete_after=10)
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -228,7 +346,6 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
 
         if self.today != currentDay:
             # keeping tracking of the day  before
-            yesterday = self.today
             # updating today so it is the correct date
             self.today = currentDay
             self.dataBase.setNewDayStats()
@@ -284,19 +401,15 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
         self.embed = dict(
             title=f"**==DISCORD STREAK INFO==**",
             color=9127187,
-            description=
-            f":white_small_square: Minimum word count for streak is {guildThreshold:0,}.\n"
-            f":white_small_square: Streaks are added when you reach {guildThreshold:0,} words or more.\n"
-            ":white_small_square: Streak will reset at midnight GMT failure to meet word count.\n"
-            ,
-            thumbnail={
-                "url": "https://cdn3.iconfinder.com/data/icons/shopping-e-commerce-33/980/shopping-24-512.png"},
-            fields=[dict(name=f"**====================** \n"
-                         , value=f":book: Total Servers\n"
-                                 f":book: Total Players\n"
-                                 f":book: Total Channels\n"
-                                 f":book: My Connection\n"
-                                 "====================", inline=True),
+            description=f":white_small_square: Minimum word count for streak is {guildThreshold:0,}.\n"
+                        f":white_small_square: Streaks are added when you reach {guildThreshold:0,} words or more.\n"
+                        ":white_small_square: Streak will reset at midnight GMT failure to meet word count.\n",
+            thumbnail={"url": "https://cdn3.iconfinder.com/data/icons/shopping-e-commerce-33/980/shopping-24-512.png"},
+            fields=[dict(name=f"**====================** \n", value=f":book: Total Servers\n"
+                                                                    f":book: Total Players\n"
+                                                                    f":book: Total Channels\n"
+                                                                    f":book: My Connection\n"
+                                                                    "====================", inline=True),
 
                     dict(name="**====================**", value=f":white_small_square:    {totalGuilds}\n "
                                                                 f":white_small_square:    {totalUsers:02,}\n"
@@ -307,19 +420,16 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
 
                     dict(name="**Useful Links**",
                          value=f":white_small_square: [Vote](https://top.gg/bot/685559923450445887) for the bot \n"
-                               f":white_small_square: [support channel](https://discord.gg/F6hvm2) for features request| upcoming updates"
-                         ,
+                               f":white_small_square: [support channel](https://discord.gg/F6hvm2) for features request| upcoming updates",
                          inline=False),
 
                     dict(name="**Update**",
-                         value=
-                         f":white_small_square: **!help** display help command for the bot\n"
-                         f":white_small_square: **!streak global** NEW COMMAND SEE GLOBAL LEADERBOARD\n"
-                         f":white_small_square: **!streak @someone** to view their summary profile\n"
-                         f":white_small_square: **!streak me** to view your own profile \n"
-                         f":white_small_square: small Achievement has been added summary profile.\n"
-                         f":white_small_square: set threshold for amount words for a streak **!threshold amount** \n"
-                         ,
+                         value=f":white_small_square: **!help** display help command for the bot\n"
+                               f":white_small_square: **!streak global** NEW COMMAND SEE GLOBAL LEADERBOARD\n"
+                               f":white_small_square: **!streak @someone** to view their summary profile\n"
+                               f":white_small_square: **!streak me** to view your own profile \n"
+                               f":white_small_square: small Achievement has been added summary profile.\n"
+                               f":white_small_square: set threshold for amount words for a streak **!threshold amount** \n",
                          inline=False),
 
                     ],
@@ -447,11 +557,11 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
                 pass
 
     # would be used if hosting bot yourself
-    # def scanCurrentServer(self):
-    #
-    #     # scanning al the guild the bot is currently in and return their ID
-    #     for guild in self.bot.guilds:
-    #         self.dataBase.addNewGuild(guild)
+    def scanCurrentServer(self):
+
+        # scanning al the guild the bot is currently in and return their ID
+        for guild in self.bot.guilds:
+            self.dataBase.addNewGuild(guild)
 
     # this is only for debugging not to be used for implementation
     @commands.command(hidden=True)

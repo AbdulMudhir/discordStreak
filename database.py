@@ -388,3 +388,87 @@ class DataBase(sqlite3.Connection):
         self.cursor.execute(
             'UPDATE global SET msgCount = 0, streaked = 0, streakCounter = CASE WHEN msgCount < serverThreshold THEN 0 ELSE streakCounter END')
         self.commit()
+
+    def add_voice_column(self):
+        self.cursor.execute('''ALTER TABLE server ADD COLUMN  active_voice Integer ;''')
+        self.cursor.execute('''ALTER TABLE server ADD COLUMN  no_active_voice Integer  ;''')
+        self.cursor.execute('''ALTER TABLE server ADD COLUMN  total_voice_time Integer;''')
+        self.cursor.execute('''ALTER TABLE server ADD COLUMN  track_voice Integer;''')
+        self.cursor.execute('''ALTER TABLE server ADD COLUMN  voice_threshold Integer;''')
+        self.commit()
+
+    def set_voice_join_time(self, server, user):
+        data = {'time': int(time.time()),
+                'server_id': server.id,
+                'user_id': user.id}
+
+        self.cursor.execute('UPDATE server set active_voice =:time WHERE userID = :user_id AND serverID =:server_id;',
+                            data)
+
+        self.commit()
+
+    def update_voice_time(self, server, user):
+        data = {'time': int(time.time()),
+                'server_id': server.id,
+                'user_id': user.id,
+                }
+
+        self.cursor.execute(
+            'UPDATE server SET no_active_voice =:time WHERE userID = :user_id AND serverID =:server_id;',
+            data)
+
+        # will be used to calculate how long the user has been in call and not muted
+        self.cursor.execute(
+            '''UPDATE server SET total_voice_time = CASE WHEN total_voice_time IS NOT NULL THEN (no_active_voice-active_voice)+total_voice_time ELSE
+            (no_active_voice-active_voice)+0 END, no_active_voice =0,active_voice=0 WHERE userID = :user_id AND serverID =:server_id;''',
+            data)
+
+        self.commit()
+
+    def track_voice(self, server):
+
+        data = {'server_id': server.id}
+
+        self.cursor.execute(
+            '''UPDATE server SET track_voice = CASE WHEN track_voice IS NULL THEN  1 ELSE track_voice END WHERE serverID = :server_id;''',
+            data)
+
+        self.commit()
+
+        self.cursor.execute('''SELECT track_voice FROM server WHERE serverID = :server_id''', data)
+
+        return self.cursor.fetchone()[0]
+
+    def enable_track_voice(self, server):
+
+        data = {'server_id': server.id}
+
+        self.cursor.execute(
+            '''UPDATE server SET track_voice = CASE WHEN track_voice IS NULL THEN  1 ELSE 1 END WHERE serverID = :server_id;''',
+            data)
+
+        self.commit()
+
+    def disable_track_voice(self, server):
+
+        data = {'server_id': server.id}
+
+        self.cursor.execute(
+            '''UPDATE server SET track_voice = CASE WHEN track_voice IS NULL THEN  0 ELSE 0 END WHERE serverID = :server_id;''',
+            data)
+
+        self.commit()
+
+    def get_voice_guild_threshold(self, server):
+        pass
+
+    def set_voice_guild_threshold(self, server, amount):
+        data = {'server_id': server.id,
+                'amount':amount}
+
+        # set default to 7200 if there's threshold set for the server
+        self.cursor.execute(
+            '''UPDATE server SET voice_threshold = CASE WHEN voice_threshold IS NULL THEN  7200 ELSE :amount END WHERE serverID = :server_id;''',
+            data)
+
+        self.commit()
