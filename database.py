@@ -429,12 +429,6 @@ class DataBase(sqlite3.Connection):
 
         data = {'server_id': server.id}
 
-        self.cursor.execute(
-            '''UPDATE server SET track_voice = CASE WHEN track_voice IS NULL THEN  1 ELSE track_voice END WHERE serverID = :server_id;''',
-            data)
-
-        self.commit()
-
         self.cursor.execute('''SELECT track_voice FROM server WHERE serverID = :server_id''', data)
 
         return self.cursor.fetchone()[0]
@@ -459,8 +453,21 @@ class DataBase(sqlite3.Connection):
 
         self.commit()
 
+    def get_user_voice_time(self, server, user):
+        data = {'server_id': server.id,
+                'user_id': user.id
+                }
+        self.cursor.execute('''SELECT total_voice_time FROM server WHERE serverID = :server_id AND userID =:user_id;''', data)
+
+        return self.cursor.fetchone()[0]
+
+
     def get_voice_guild_threshold(self, server):
-        pass
+        data = {'server_id': server.id,
+                }
+        self.cursor.execute('''SELECT voice_threshold FROM server WHERE serverID = :server_id;''',data)
+
+        return self.cursor.fetchone()[0]
 
     def set_voice_guild_threshold(self, server, amount):
         data = {'server_id': server.id,
@@ -468,7 +475,20 @@ class DataBase(sqlite3.Connection):
 
         # set default to 7200 if there's threshold set for the server
         self.cursor.execute(
-            '''UPDATE server SET voice_threshold = CASE WHEN voice_threshold IS NULL THEN  7200 ELSE :amount END WHERE serverID = :server_id;''',
+            '''UPDATE server SET voice_threshold =:amount WHERE serverID = :server_id;''',
             data)
+
+        self.commit()
+
+    def set_default_voice_threshold(self):
+        self.cursor.execute(
+            '''UPDATE server SET voice_threshold = 7200''')
+
+        self.commit()
+
+    def set_default_voice_track(self):
+
+        self.cursor.execute(
+            '''UPDATE server SET track_voice = 1''')
 
         self.commit()

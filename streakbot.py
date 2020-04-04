@@ -19,8 +19,7 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
         self.bot.remove_command("help")
         self.embed = None
         self.token = ""
-        self.dblpy = dbl.DBLClient(self.bot, self.token,
-                                   autopost=True)  # Auto post will post your guild count every 30 minutes
+        self.dblpy = dbl.DBLClient(self.bot, self.token,autopost=True)  # Auto post will post your guild count every 30 minutes
 
         self.dataBase = DataBase('discordStreakBot.db')
         #
@@ -28,11 +27,14 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
         # self.dataBase.createGlobalTable()
         # self.dataBase.add_voice_column()
 
+
     @commands.Cog.listener()
     async def on_ready(self):
         print(f'We have logged in as {self.bot.user}\n')
         self.dateCheck.start()
         # self.scanCurrentServer()
+        # self.dataBase.set_default_voice_threshold()
+        # self.dataBase.set_default_voice_track()
 
     # @commands.Cog.listener()
     # async def on_command_error(self, ctx, error):
@@ -49,40 +51,80 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
         user = user
         guild = user.guild
 
-        # check if the guild wants to track
-        if self.dataBase.track_voice(guild):
+        # ignore any bot that would join voice channels
+        if not user.bot:
 
-            # check if the user has already streaked other wise ignore
-            if not self.dataBase.checkUserStreaked(guild.id, user.id):
+            # check if the guild wants to track
+            if self.dataBase.track_voice(guild):
 
-                # if the user just recently joined a voice channel
-                joined_a_voice_channel = True if previous_voice_state.channel is None else False
-                user_left_voice_channel = True if current_voice_state.channel is None else False
-                user_current_mute_state = True if current_voice_state.mute or current_voice_state.self_mute else False
+                # check if the user has already streaked other wise ignore
+                if not self.dataBase.checkUserStreaked(guild.id, user.id):
 
-                # if the user is not muted prior to joining voice call or current state
-                if not user_current_mute_state and joined_a_voice_channel:
-                    print("user has joined a voice channel")
-                    self.dataBase.set_voice_join_time(guild, user)
 
-                elif user_left_voice_channel and user_current_mute_state:
-                    print("user has left voice channel while muted")
+                    # if the user just recently joined a voice channel
+                    joined_a_voice_channel = True if previous_voice_state.channel  is None else False
+                    user_left_voice_channel = True if current_voice_state.channel is None else False
+                    user_current_mute_state = True if current_voice_state.mute or current_voice_state.self_mute else False
 
-                elif user_left_voice_channel and not user_current_mute_state:
-                    self.dataBase.update_voice_time(guild, user)
-                    print("user has left voice channel")
+                    print(current_voice_state.afk)
+                    # if the user is not muted prior to joining voice call or current state
+                    if not user_current_mute_state and joined_a_voice_channel and not current_voice_state.afk:
+                        print("user has joined a voice channel")
+                        self.dataBase.set_voice_join_time(guild, user)
 
-                elif user_current_mute_state and joined_a_voice_channel:
-                    print("user has joined the channel while muted")
+                    elif joined_a_voice_channel and current_voice_state.afk and previous_voice_state is None:
+                        print("user has joined the afk channel")
 
-                elif user_current_mute_state:
-                    print("user is muted ")
-                    self.dataBase.update_voice_time(guild, user)
+                    elif user_left_voice_channel and user_current_mute_state:
+                        print("user has left voice channel while muted")
 
-                elif not user_current_mute_state:
-                    print("user has un-muted")
-                    self.dataBase.set_voice_join_time(guild, user)
+                    elif user_left_voice_channel and not user_current_mute_state and not previous_voice_state.afk:
+                        self.dataBase.update_voice_time(guild, user)
+                        self.check_voice_streaked(guild, user)
+                        print("user has left voice channel")
 
+                    elif user_left_voice_channel and previous_voice_state.afk:
+                        print("user has left afk channel")
+
+                    elif user_current_mute_state and joined_a_voice_channel and not current_voice_state.afk:
+                        print("user has joined the channel while muted")
+
+                    elif user_current_mute_state and joined_a_voice_channel and current_voice_state.afk:
+                        print("user has joined the  afk channel while muted")
+
+                    elif user_current_mute_state and not current_voice_state.afk and not previous_voice_state.afk:
+                        print("user is muted ")
+                        self.dataBase.update_voice_time(guild, user)
+                        self.check_voice_streaked(guild, user)
+
+                    elif user_current_mute_state and current_voice_state.afk:
+                        print("user has muted in an afk channel")
+
+                    elif not user_current_mute_state and current_voice_state.afk :
+                        print("user has un-muted in an afk channel")
+
+                    elif current_voice_state.afk and not joined_a_voice_channel:
+                        print("has has been moved to afk channel")
+                        self.dataBase.update_voice_time(guild, user)
+                        self.check_voice_streaked(guild, user)
+
+                    elif current_voice_state.afk and joined_a_voice_channel:
+                        print("user has joined the afk channel")
+
+                    elif not user_current_mute_state and not current_voice_state.afk and not previous_voice_state.afk:
+                        print("user has un-muted")
+                        self.dataBase.set_voice_join_time(guild, user)
+
+                    elif previous_voice_state.afk and not user_current_mute_state:
+                        print("User is no longer in afk channel")
+                        self.dataBase.set_voice_join_time(guild, user)
+
+    def check_voice_streaked(self, server, user):
+        server_voice_threshold = self.dataBase.get_voice_guild_threshold(server)
+        user_total_voice_time = self.dataBase.get_user_voice_time(server, user)
+
+        if user_total_voice_time >= server_voice_threshold:
+            self.dataBase.addStreakToUser(server.id, user.id, self.today)
 
     @commands.command(brief="Admin", help="``!voice enable enable`` Enable voice to be counted for streaking\n"
                                           "``!voice disable`` Disable voice to be counted for streaking\n"
