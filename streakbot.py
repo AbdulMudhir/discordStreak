@@ -1,68 +1,46 @@
 import discord
-import json
 from discord.ext import commands
 from discord.ext import tasks
 from datetime import datetime
 from database import DataBase
-from reaction_page import Paginator
 import dbl
 
 from discord.ext.commands import CommandError
 
-bot = commands.Bot(command_prefix='$')
+bot = commands.Bot(command_prefix='.')
 
 
-
-class StreakBot(commands.Cog):
-
+class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal User", help="I'm a mysterious command.")):
     today = datetime.today().date().strftime("%d-%m-%Y")
     yesterday = None
 
     def __init__(self, bot):
         self.bot = bot
+        self.bot.remove_command("help")
         self.embed = None
         self.token = ""
-        self.dblpy = dbl.DBLClient(self.bot, self.token, autopost=True) # Autopost will post your guild count every 30 minutes
-
+        self.dblpy = dbl.DBLClient(self.bot, self.token,
+                                   autopost=True)  # Autopost will post your guild count every 30 minutes
 
         self.dataBase = DataBase('discordStreakBot.db')
 
-       # self.dataBase.createTable()
-       # self.dataBase.createGlobalTable()
-       # self.migrationToSQL()
+    # self.dataBase.createTable()
+    # self.dataBase.createGlobalTable()
+    # self.migrationToSQL()
 
     @commands.Cog.listener()
     async def on_ready(self):
         print(f'We have logged in as {self.bot.user}\n')
         self.dateCheck.start()
 
-
     # @commands.Cog.listener()
     # async def on_command_error(self, ctx, error):
     #     if isinstance(error, CommandError):
     #         return
     #     raise error
+
     async def on_guild_post(self):
         print("Server count posted successfully")
-                
-
-    @commands.Cog.listener()
-    async def on_voice_state_update(self, user, voice_state_before, current_user_voice_status):
-        user = user
-        user_id = user.id
-        guild_id_user_from = user.guild.id
-        voice_channel_before = voice_state_before
-        current_user_voice_channel = current_user_voice_status
-
-        if not user.bot:
-
-            print(user)
-            print(current_user_voice_channel)
-
-
-
-
-
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -76,7 +54,7 @@ class StreakBot(commands.Cog):
         if not user.bot:
 
             messageLength = len(message.content.split())
-            print("here i am")
+
             # add the length of the message to the database to track
             self.dataBase.addMessageCount(guildID, userID, messageLength)
             # retrieve user message count
@@ -95,10 +73,15 @@ class StreakBot(commands.Cog):
             streaked = self.dataBase.checkUserStreaked(guildID, userID)
 
             # get stats for the global version
-            streakedGlobal = self.dataBase.checkUserGlobalStreaked(userID)
+            try:
+                streakedGlobal = self.dataBase.checkUserGlobalStreaked(userID)
+            except TypeError:
+                # will be used if the user does not exist in the global leaderboard by accident
+                self.dataBase.add_user_global(guild, user)
+                streakedGlobal = self.dataBase.checkUserGlobalStreaked(userID)
+
             globalThreshold = self.dataBase.getGlobalThreshold()
             msgCountGlobal = self.dataBase.getMessageCountGlobal(userID)
-
 
             self.fillNoneData(message.guild, user)
 
@@ -119,7 +102,8 @@ class StreakBot(commands.Cog):
         userName = self.dataBase.updateUserName(user) if self.dataBase.getUserName(user) is None \
             else self.dataBase.getUserName(user)
 
-    @commands.command()
+    @commands.command(
+        help="``!streak (Optional:me|global|@someone) ``: A very wide-purpose command, with the arguments basically self-explanatory. If you want to view the global leaderboard, use no arguments.")
     async def streak(self, ctx, *args):
 
         # getting the guild the message was sent from
@@ -202,8 +186,6 @@ class StreakBot(commands.Cog):
 
         # return first 25
         leaderBoard = self.dataBase.viewGlobalLeaderBoard()
-        # get the username of a user and remove anything after their deliminator #
-        # userNames = '\n'.join([user[1].split('#')[0] for user in leaderBoard])
 
         userNames = []
 
@@ -239,13 +221,11 @@ class StreakBot(commands.Cog):
         await ctx.channel.send(embed=discord.Embed.from_dict(self.embed))
 
     # checking for the dates if its a new day
-    @tasks.loop(minutes= 5)
+    @tasks.loop(minutes=5)
     async def dateCheck(self):
 
         currentDay = datetime.today().date().strftime("%d-%m-%Y")
 
-        #currentDay = '23/03/2020'
-    
         if self.today != currentDay:
             # keeping tracking of the day  before
             yesterday = self.today
@@ -284,7 +264,7 @@ class StreakBot(commands.Cog):
         print(f"A Guild Has left {guild.name}")
         self.dataBase.removeServer(guild.id)
 
-    @commands.command()
+    @commands.command(help="``!info``: View basic bot information, like user count, server count, latency, etc.")
     async def info(self, ctx):
 
         # how many server the bot is in
@@ -332,13 +312,14 @@ class StreakBot(commands.Cog):
                          inline=False),
 
                     dict(name="**Update**",
-                         value=f":white_small_square: **!streak global** NEW COMMAND SEE GLOBAL LEADERBOARD\n"
-                            f":white_small_square: **!streak @someone** to view their summary profile\n"
-                               f":white_small_square: **!streak me** to view your own profile \n"
-                               f":white_small_square: small Achievement has been added summary profile.\n"
-                               f":white_small_square: set threshold for amount words for a streak **!threshold amount** \n"
-                               f":white_small_square: **only server owner can set threshold**\n",
-
+                         value=
+                         f":white_small_square: **!help** display help command for the bot\n"
+                         f":white_small_square: **!streak global** NEW COMMAND SEE GLOBAL LEADERBOARD\n"
+                         f":white_small_square: **!streak @someone** to view their summary profile\n"
+                         f":white_small_square: **!streak me** to view your own profile \n"
+                         f":white_small_square: small Achievement has been added summary profile.\n"
+                         f":white_small_square: set threshold for amount words for a streak **!threshold amount** \n"
+                         ,
                          inline=False),
 
                     ],
@@ -351,7 +332,6 @@ class StreakBot(commands.Cog):
 
         userName, MsgCount, streakCounter, streaked, highestStreak, lastStreakDay, highMsgCount \
             = self.dataBase.getUserInfo(guildID, user.id)
-
 
         guildThreshold = self.dataBase.getServerThreshold(guildID)
 
@@ -396,7 +376,6 @@ class StreakBot(commands.Cog):
 
         )
 
-
         # check if the user has achieved any of the milestones
         self.achievementUnlocks(highestStreak, highMsgCount)
 
@@ -424,8 +403,9 @@ class StreakBot(commands.Cog):
         # loop through the milestone and check if the user has reached the milestone if they have give them diamond
         # else cross
 
-
-        achievementStreakCheck = '\n'.join([f":gem: {milestone} Streaks" if userStreak >= milestone else f":x: {milestone} Streaks" for milestone in milestones])
+        achievementStreakCheck = '\n'.join(
+            [f":gem: {milestone} Streaks" if userStreak >= milestone else f":x: {milestone} Streaks" for milestone in
+             milestones])
 
         achievementMsgCheck = '\n'.join([
             f":gem: {milestone:02,} words" if totalMessage >= milestone else f":x: {milestone:02,} words"
@@ -444,7 +424,8 @@ class StreakBot(commands.Cog):
         self.embed['fields'].append(achievement2)
         self.embed['fields'].append(bottomBar)
 
-    @commands.command()
+    @commands.command(brief="Admin",
+                      help="``!threshold (amount)``: Set the minimum number of words for a server member to get a streak.")
     async def threshold(self, ctx, total):
 
         guildOwnerId = ctx.guild.owner_id
@@ -466,22 +447,19 @@ class StreakBot(commands.Cog):
                 pass
 
     # would be used if hosting bot yourself
-    def scanCurrentServer(self):
-
-        # scanning al the guild the bot is currently in and return their ID
-        for guild in self.bot.guilds:
-            self.dataBase.addNewGuild(guild)
+    # def scanCurrentServer(self):
+    #
+    #     # scanning al the guild the bot is currently in and return their ID
+    #     for guild in self.bot.guilds:
+    #         self.dataBase.addNewGuild(guild)
 
     # this is only for debugging not to be used for implementation
-    @commands.command()
+    @commands.command(hidden=True)
     async def setstreak(self, ctx, amount):
-
-        guildMessageFrom = str(ctx.guild.id)
 
         testGuildID = 602439523284287508
 
         if ctx.author.id == 125604422007914497 and ctx.guild.id == testGuildID:
-
             mentionedUser = ctx.message.mentions[0].name
             mentionedUserID = ctx.message.mentions[0].id
             # give the user a streak point
@@ -489,11 +467,99 @@ class StreakBot(commands.Cog):
 
             await ctx.channel.send(f"{mentionedUser} streak point has been set to {amount} ")
 
+    @commands.command(help="``!help (optional: (category name|command name)``: What do you think I do?")
+    async def help(self, ctx, *args):
+
+        if not args:
+            # getting list of commands and putting speech bubble over them to make them stand out
+            list_of_commands = ','.join(map(lambda word: f'`{word}`', command_event.command_categories))
+
+            embed = dict(
+                title=f"**==DISCORD STREAK HELP==**",
+                color=9127187,
+                thumbnail={
+                    "url": "https://cdn0.iconfinder.com/data/icons/small-n-flat/24/678110-sign-info-512.png"},
+                fields=[
+                    dict(name="**Categories**",
+                         value=f"{list_of_commands}",
+                         inline=False),
+
+                    dict(name="**Basic Info**",
+                         value="To view the commands in each category, do ``!help <category name>``.\n"
+                               "To view the help for each command, do ``!help <command name>``.\n",
+                         inline=False),
+
+                    dict(name="**Support Channel**",
+                         value=f"[Support channel](https://discord.gg/F6hvm2)\n===**You Can**===\n"
+                               f":white_small_square: Features request\n"
+                               f":white_small_square: Upcoming updates\n"
+                               f":white_small_square: Report a bug\n"
+                               f":white_small_square: Many more things to  come!\n", inline=False),
+
+                    dict(name="**Other Information**",
+                         value=f":white_small_square: [Vote on top.gg](https://top.gg/bot/685559923450445887) \n"
+                               f":white_small_square: bots.ondiscord.xyz [pending review]",
+                         inline=False),
+
+                ],
+
+                footer=dict(text="We hope you find everything OK!"),
+
+            )
+
+            await ctx.channel.send(embed=discord.Embed.from_dict(embed))
+            # no need to go next step
+            return
+
+        # if the length of command sent by user is less than 3 (3 is a place holder and can be grown
+        if len(args) <= 3:
+
+            command = ' '.join(args).title()
+
+            if command in command_event.command_categories:
+
+                # get list of commands and jon them
+                list_of_commands = ' '.join(command_event.command_categories.get(command))
+
+                embed = dict(
+                    title=f"**==DISCORD STREAK HELP==**",
+                    color=9127187,
+                    thumbnail={
+                        "url": "https://cdn0.iconfinder.com/data/icons/small-n-flat/24/678110-sign-info-512.png"},
+                    fields=[
+                        dict(name="**Commands**",
+                             value=f"{list_of_commands}",
+                             inline=False),
+                    ],
+                    footer=dict(text="We hope you find everything OK!"),
+                )
+                await ctx.channel.send(embed=discord.Embed.from_dict(embed))
+
+            elif command.lower() in command_event.commands:
+
+                command_help_info = command_event.commands.get(command.lower())
+
+                embed = dict(
+                    title=f"**==DISCORD STREAK HELP==**",
+                    color=9127187,
+                    thumbnail={
+                        "url": "https://cdn0.iconfinder.com/data/icons/small-n-flat/24/678110-sign-info-512.png"},
+                    fields=[
+                        dict(name="**Commands**", value=f"{command_help_info}",
+                             inline=False),
+                    ],
+                    footer=dict(text="We hope you find everything OK!"),
+                )
+                await ctx.channel.send(embed=discord.Embed.from_dict(embed))
+
+            else:
+
+                await ctx.channel.send("That command or category doesn't exist!")
+
     # this is only for debugging not to be used for implementation
-    @commands.command()
+    @commands.command(hidden=True)
     async def setmsg(self, ctx, amount):
 
-        guildMessageFrom = str(ctx.guild.id)
         testGuildID = 602439523284287508
         if ctx.author.id == 125604422007914497 and ctx.guild.id == testGuildID:
             mentionedUser = ctx.message.mentions[0].name
@@ -504,10 +570,40 @@ class StreakBot(commands.Cog):
             await ctx.channel.send(f"{mentionedUser} MSG point has been set to {amount} ")
 
 
+class CommandEvent:
+
+    def __init__(self):
+        self.command_categories = {}
+        self.commands = {}
+        self.set_up_commands()
+
+    def set_up_commands(self):
+
+        # loop through the commands
+        for command in bot.get_cog('StreakBot').get_commands():
+
+            # ignore all hidden commands
+            if not command.hidden:
+                # get the category name
+                command_category = command.brief
+
+                # add the commands to the command list dictionary
+                self.commands[command.name] = command.help
+
+                # check if a key already exist for this category
+                if self.command_categories.get(command.brief) is None:
+
+                    self.command_categories[command_category] = [f"`{command.name}`"]
+
+                else:
+                    # otherwise append to an existing key
+                    self.command_categories[command_category].append(f"`{command.name}`")
+
+
 if __name__ == "__main__":
     bot.add_cog(StreakBot(bot))
-    bot.remove_command("help")
-    bot.run(open(r"C:\Users\Abdul\PycharmProjects\discordStreak\backup\token.txt").read())
+    command_event = CommandEvent()
+    bot.run("")
 
 """
 Methods to update when changing Json

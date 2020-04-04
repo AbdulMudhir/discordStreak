@@ -8,7 +8,7 @@ start = time.time()
 class DataBase(sqlite3.Connection):
 
     def __init__(self, dataBasePath):
-        sqlite3.Connection.__init__(self, dataBasePath,  timeout =10)
+        sqlite3.Connection.__init__(self, dataBasePath)
         self.cursor = self.cursor()
 
     def createTable(self):
@@ -163,8 +163,6 @@ class DataBase(sqlite3.Connection):
             'UPDATE server SET msgCount = msgCount + :msgCount, highMsgCount = highMsgCount + :msgCount WHERE serverID = :serverID AND userID = :userID; ',
             userInfo)
 
-        self.commit()
-
         self.cursor.execute(
             'UPDATE global SET msgCount = msgCount + :msgCount, highMsgCount = highMsgCount + :msgCount WHERE userID = :userID; ',
             userInfo)
@@ -283,6 +281,26 @@ class DataBase(sqlite3.Connection):
                             )
         self.commit()
 
+    def add_user_global(self, server, user):
+        userInfoGlobal = {
+            'serverID': server.id,
+            'serverName': server.name,
+            'userName': f"{user.name}#{user.discriminator}",
+            'userID': user.id,
+            'msgCount': 0,
+            'serverThreshold': 500,
+            'streakCounter': 0,
+            'streaked': 0,
+            'highestStreak': 0,
+            'lastStreakDay': "Never Streaked",
+            'highMsgCount': 0}
+
+        self.cursor.execute('''INSERT OR IGNORE INTO global(serverName, serverID, userName, userID, serverThreshold,msgCount,streakCounter, streaked, highestStreak, lastStreakDay, highMsgCount)
+                                VALUES (:serverName,:serverID,:userName, :userID, :serverThreshold,:msgCount,:streakCounter, :streaked, :highestStreak, :lastStreakDay, :highMsgCount)''',
+                            userInfoGlobal
+                            )
+        self.commit()
+
     def addNewGuild(self, server):
         # looping through the list of users that get passed on
         # will  be used when a guild joins
@@ -364,7 +382,7 @@ class DataBase(sqlite3.Connection):
                             )
 
     def setNewDayStats(self):
-        
+
         self.cursor.execute(
             'UPDATE server SET msgCount = 0, streaked = 0, streakCounter = CASE WHEN msgCount < serverThreshold THEN 0 ELSE streakCounter END')
         self.cursor.execute(
