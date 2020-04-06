@@ -14,27 +14,29 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
     today = datetime.today().date().strftime("%d-%m-%Y")
     yesterday = None
 
-    def __init__(self, bot):
-        self.bot = bot
+    def __init__(self, bot_client):
+        self.bot = bot_client
         self.bot.remove_command("help")
         self.embed = None
         self.token = ""
-        self.dblpy = dbl.DBLClient(self.bot, self.token,autopost=True)  # Auto post will post your guild count every 30 minutes
+        self.dblpy = dbl.DBLClient(self.bot, self.token,
+                                   autopost=True)  # Auto post will post your guild count every 30 minutes
 
         self.dataBase = DataBase('discordStreakBot.db')
-        #
+
         # self.dataBase.createTable()
         # self.dataBase.createGlobalTable()
-        # self.dataBase.add_voice_column()
 
+    async def change_profile_picture(self):
+        with open('snapchat.png', 'rb') as f:
+            await self.bot.user.edit(avatar=f.read())
 
     @commands.Cog.listener()
     async def on_ready(self):
         print(f'We have logged in as {self.bot.user}\n')
         self.dateCheck.start()
-        # self.scanCurrentServer()
-        # self.dataBase.set_default_voice_threshold()
-        # self.dataBase.set_default_voice_track()
+        self.scanCurrentServer()
+        # self.dataBase.set_default_voice_values()
 
     # @commands.Cog.listener()
     # async def on_command_error(self, ctx, error):
@@ -54,77 +56,71 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
         # ignore any bot that would join voice channels
         if not user.bot:
 
+            self.fillNoneData(guild, user)
+
             # check if the guild wants to track
             if self.dataBase.track_voice(guild):
 
                 # check if the user has already streaked other wise ignore
                 if not self.dataBase.checkUserStreaked(guild.id, user.id):
 
-
                     # if the user just recently joined a voice channel
-                    joined_a_voice_channel = True if previous_voice_state.channel  is None else False
+                    joined_a_voice_channel = True if previous_voice_state.channel is None else False
                     user_left_voice_channel = True if current_voice_state.channel is None else False
+
                     user_current_mute_state = True if current_voice_state.mute or current_voice_state.self_mute else False
 
-                    print(current_voice_state.afk)
-                    # if the user is not muted prior to joining voice call or current state
-                    if not user_current_mute_state and joined_a_voice_channel and not current_voice_state.afk:
-                        print("user has joined a voice channel")
-                        self.dataBase.set_voice_join_time(guild, user)
+                    user_active_voice_time = self.dataBase.get_voice_status(guild, user)
+                    # check if the channel the user has moved to is not an afk channel
+                    if not current_voice_state.afk:
+                        # check if they just recently joined a channel and is not in a muted state
+                        if joined_a_voice_channel and not user_current_mute_state:
+                            print("user has joined the voice channel")
+                            self.dataBase.set_voice_join_time(guild, user)
+                            return
+                        # check if the user has left the voice call and not in a muted state as then we would update database
+                        elif user_left_voice_channel and not user_current_mute_state:
 
-                    elif joined_a_voice_channel and current_voice_state.afk and previous_voice_state is None:
-                        print("user has joined the afk channel")
+                            # this is only there to check if there the  user was in an active call before hand
+                            if user_active_voice_time != 0:
+                                print("user has left the voice channel")
+                                self.dataBase.update_voice_time(guild, user)
+                                return
+                        # user has joined a voice channel but muted
+                        elif joined_a_voice_channel and user_current_mute_state:
+                            return
+                        # user has left a voice channel but muted
+                        elif user_left_voice_channel and user_current_mute_state:
+                            return
+                        # check if user has moved to a different voice channel
+                        moved_channel = True if previous_voice_state.channel.id != current_voice_state.channel.id else False
+                        # will be used to check if the user is moving around the voice channel
+                        if moved_channel:
+                            # if user moved channel while muted ignore this
+                            if user_current_mute_state:
+                                print("moved channel while muted")
+                                return
+                            else:
+                                # user moved channel unmuted
+                                print("user has moved channel un-muted")
+                                return
+                        # if the user is currently muted
+                        if user_current_mute_state:
+                            # if the user was muted but was not in a call before (it's for user that joins a stream)
+                            if user_active_voice_time != 0:
+                                self.dataBase.update_voice_time(guild, user)
+                                print("user has muted")
+                        else:
+                            # if the user was  never muted but was not in a call before (it's for user that joins a stream)
+                            if user_active_voice_time == 0:
+                                print("user has un-muted")
+                                self.dataBase.set_voice_join_time(guild, user)
 
-                    elif user_left_voice_channel and user_current_mute_state:
-                        print("user has left voice channel while muted")
+                    else:
 
-                    elif user_left_voice_channel and not user_current_mute_state and not previous_voice_state.afk:
-                        self.dataBase.update_voice_time(guild, user)
-                        self.check_voice_streaked(guild, user)
-                        print("user has left voice channel")
-
-                    elif user_left_voice_channel and previous_voice_state.afk:
-                        print("user has left afk channel")
-
-                    elif user_current_mute_state and joined_a_voice_channel and not current_voice_state.afk:
-                        print("user has joined the channel while muted")
-
-                    elif user_current_mute_state and joined_a_voice_channel and current_voice_state.afk:
-                        print("user has joined the  afk channel while muted")
-
-                    elif user_current_mute_state and not current_voice_state.afk and not previous_voice_state.afk:
-                        print("user is muted ")
-                        self.dataBase.update_voice_time(guild, user)
-                        self.check_voice_streaked(guild, user)
-
-                    elif user_current_mute_state and current_voice_state.afk:
-                        print("user has muted in an afk channel")
-
-                    elif not user_current_mute_state and current_voice_state.afk :
-                        print("user has un-muted in an afk channel")
-
-                    elif current_voice_state.afk and not joined_a_voice_channel:
-                        print("has has been moved to afk channel")
-                        self.dataBase.update_voice_time(guild, user)
-                        self.check_voice_streaked(guild, user)
-
-                    elif current_voice_state.afk and joined_a_voice_channel:
-                        print("user has joined the afk channel")
-
-                    elif not user_current_mute_state and not current_voice_state.afk and not previous_voice_state.afk:
-                        print("user has un-muted")
-                        self.dataBase.set_voice_join_time(guild, user)
-
-                    elif previous_voice_state.afk and not user_current_mute_state:
-                        print("User is no longer in afk channel")
-                        self.dataBase.set_voice_join_time(guild, user)
-
-    def check_voice_streaked(self, server, user):
-        server_voice_threshold = self.dataBase.get_voice_guild_threshold(server)
-        user_total_voice_time = self.dataBase.get_user_voice_time(server, user)
-
-        if user_total_voice_time >= server_voice_threshold:
-            self.dataBase.addStreakToUser(server.id, user.id, self.today)
+                        if not previous_voice_state.afk and not user_current_mute_state:
+                            print("user has been moved to afk")
+                            self.dataBase.update_voice_time(guild, user)
 
     @commands.command(brief="Admin", help="``!voice enable enable`` Enable voice to be counted for streaking\n"
                                           "``!voice disable`` Disable voice to be counted for streaking\n"
@@ -132,75 +128,76 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
                                           "Set the threshold for how long the user needs to be in call to gain a streak"
                                           "user's that are muted will not be counted to words tracking total time they were in the call")
     async def voice(self, ctx, *args):
+        administrator = ctx.author.guild_permissions.administrator
+        if administrator or ctx.author.id == 125604422007914497:
+            if len(args) <= 4:
 
-        if len(args) <= 4:
+                guild = ctx.author.guild
 
-            guild = ctx.author.guild
+                command = ' '.join(args)
 
-            command = ' '.join(args)
+                if command == "enable":
 
-            if command == "enable":
+                    # check if the guild command has already been enabled otherwise enable it
+                    if not self.dataBase.track_voice(guild):
+                        self.dataBase.enable_track_voice(guild)
+                        await ctx.channel.send("Voice channels will now be counted for streak!", delete_after=10)
 
-                # check if the guild command has already been enabled otherwise enable it
-                if not self.dataBase.track_voice(guild):
-                    self.dataBase.enable_track_voice(guild)
-                    await ctx.channel.send("Voice channels will now be counted for streak!", delete_after=10)
+                    else:
+                        await ctx.channel.send("Voice channels are already counted for streak!", delete_after=10)
 
-                else:
-                    await ctx.channel.send("Voice channels are already counted for streak!", delete_after=10)
+                # check if the guild command was already disabled other wise enable it
+                elif command == "disable":
+                    if self.dataBase.track_voice(guild):
+                        self.dataBase.disable_track_voice(guild)
+                        await ctx.channel.send("Voice channels will not be counted for streak!", delete_after=10)
+                    else:
+                        await ctx.channel.send("Voice channels are already disabled for streak!", delete_after=10)
 
-            # check if the guild command was already disabled other wise enable it
-            elif command == "disable":
-                if self.dataBase.track_voice(guild):
-                    self.dataBase.disable_track_voice(guild)
-                    await ctx.channel.send("Voice channels will not be counted for streak!", delete_after=10)
-                else:
-                    await ctx.channel.send("Voice channels are already disabled for streak!", delete_after=10)
+                # will be used to track the
+                elif 'threshold' in command:
 
-            # will be used to track the
-            elif 'threshold' in command:
+                    # unpack the threshold amount to be set
+                    command, threshold_amount, *other_arguments = args
 
-                # unpack the threshold amount to be set
-                command, threshold_amount, *other_arguments = args
+                    # try convert the given digit into
+                    try:
+                        threshold_amount = int(threshold_amount)
 
-                # try convert the given digit into
-                try:
-                    threshold_amount = int(threshold_amount)
+                    except ValueError:
 
-                except ValueError:
+                        await ctx.channel.send("Invalid digit sent")
 
-                    await ctx.channel.send("Invalid digit sent")
+                    # if no other arguments were passed in (minutes | hours)
+                    if not other_arguments:
 
-                # if no other arguments were passed in (minutes | hours)
-                if not other_arguments:
+                        self.dataBase.set_voice_guild_threshold(guild, threshold_amount)
 
-                    self.dataBase.set_voice_guild_threshold(guild, threshold_amount)
+                        await ctx.channel.send(
+                            f"New voice threshold has been set to {threshold_amount:0,} seconds for {guild.name}\n",
+                            delete_after=10)
 
-                    await ctx.channel.send(
-                        f"New voice threshold has been set to {threshold_amount:0,} seconds for {guild.name}\n",
-                        delete_after=10)
+                    # if the user has given minutes argument convert it to seconds then update database
+                    elif other_arguments[0].startswith('minute'):
 
-                # if the user has given minutes argument convert it to seconds then update database
-                elif other_arguments[0].startswith('minute'):
+                        convert_threshold_amount = threshold_amount * 60
 
-                    convert_threshold_amount = threshold_amount * 60
+                        self.dataBase.set_voice_guild_threshold(guild, convert_threshold_amount)
 
-                    self.dataBase.set_voice_guild_threshold(guild, convert_threshold_amount)
+                        await ctx.channel.send(
+                            f"New voice threshold has been set to {threshold_amount:0,} minute for {guild.name}\n",
+                            delete_after=10)
 
-                    await ctx.channel.send(
-                        f"New voice threshold has been set to {threshold_amount:0,} minute for {guild.name}\n",
-                        delete_after=10)
+                    # if the user has given hour argument convert it to seconds then update database
+                    elif other_arguments[0].startswith('hour'):
 
-                # if the user has given hour argument convert it to seconds then update database
-                elif other_arguments[0].startswith('hour'):
+                        convert_threshold_amount = (threshold_amount * 60) * 60
 
-                    convert_threshold_amount = (threshold_amount * 60) * 60
+                        self.dataBase.set_voice_guild_threshold(guild, convert_threshold_amount)
 
-                    self.dataBase.set_voice_guild_threshold(guild, convert_threshold_amount)
-
-                    await ctx.channel.send(
-                        f"New voice threshold has been set to {threshold_amount:0,} hour for {guild.name}\n",
-                        delete_after=10)
+                        await ctx.channel.send(
+                            f"New voice threshold has been set to {threshold_amount:0,} hour for {guild.name}\n",
+                            delete_after=10)
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -270,6 +267,8 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
 
         guildID = ctx.guild.id
 
+        guild = ctx.guild
+
         # check if user has mentioned someone
         mention = ctx.message.mentions
 
@@ -285,7 +284,7 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
                 # send the information over to another method to send an embed for that user
                 # passing over ctx to send message to the channel
 
-                await self.mentionStreak(ctx, userMentioned, guildID)
+                await self.mentionStreak(ctx, userMentioned, guild)
 
         # check if there's any other messages that were sent
         elif otherMessage:
@@ -294,7 +293,7 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
             otherMessage = args[0]
 
             if otherMessage == "me":
-                await self.mentionStreak(ctx, ctx.author, guildID)
+                await self.mentionStreak(ctx, ctx.author, guild)
 
             elif otherMessage == "global":
 
@@ -340,7 +339,7 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
                         dict(name="Total Words Sent", value=usersTotalMessages, inline=True)],
                 footer=dict(text=f"Total Words counted on {self.today} ")
             )
-            await ctx.channel.send(embed=discord.Embed.from_dict(self.embed))
+            await ctx.channel.send(embed=discord.Embed.from_dict(self.embed), delete_after=60)
 
     async def globalLeaderBoard(self, ctx):
 
@@ -376,7 +375,8 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
             fields=[dict(name="**Users**", value=userNames, inline=True),
                     dict(name="Streak Total", value=usersStreakDays, inline=True),
                     dict(name="Words Sent Today", value=usersTotalMessages, inline=True)],
-            footer=dict(text=f"Total Words counted on {self.today} | Threshold for Global is 500 word Count")
+            footer=dict(text=f"Total Words counted on {self.today} | Threshold for Global is 500 word Count\n"
+                             f"Voice time are not counted towards global leaderboard")
         )
         await ctx.channel.send(embed=discord.Embed.from_dict(self.embed))
 
@@ -390,6 +390,7 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
             # keeping tracking of the day  before
             # updating today so it is the correct date
             self.today = currentDay
+
             self.dataBase.setNewDayStats()
 
             print("New Day")
@@ -437,15 +438,21 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
 
         guildID = ctx.guild.id
 
+        guild = ctx.author.guild
+
         # the threshold(total messages to achieve to streak) the guild has been set to
         guildThreshold = self.dataBase.getServerThreshold(guildID)
+
+        guild_voice_threshold = f":white_small_square: Accumulate {int(self.dataBase.get_voice_guild_threshold(guild) / 60)} minutes in  voice call (unmuted) to streak  " \
+            if self.dataBase.track_voice(guild) else ''
 
         self.embed = dict(
             title=f"**==DISCORD STREAK INFO==**",
             color=9127187,
             description=f":white_small_square: Minimum word count for streak is {guildThreshold:0,}.\n"
                         f":white_small_square: Streaks are added when you reach {guildThreshold:0,} words or more.\n"
-                        ":white_small_square: Streak will reset at midnight GMT failure to meet word count.\n",
+                        ":white_small_square: Streak will reset at midnight GMT failure to meet word count.\n"
+                        f"{guild_voice_threshold}\n",
             thumbnail={"url": "https://cdn3.iconfinder.com/data/icons/shopping-e-commerce-33/980/shopping-24-512.png"},
             fields=[dict(name=f"**====================** \n", value=f":book: Total Servers\n"
                                                                     f":book: Total Players\n"
@@ -478,14 +485,14 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
 
             footer=dict(text=f"HAPPY STREAKING!"),
         )
-        await ctx.channel.send(embed=discord.Embed.from_dict(self.embed))
+        await ctx.channel.send(embed=discord.Embed.from_dict(self.embed), delete_after=60)
 
-    async def mentionStreak(self, ctx, user, guildID):
+    async def mentionStreak(self, ctx, user, guild):
 
         userName, MsgCount, streakCounter, streaked, highestStreak, lastStreakDay, highMsgCount \
-            = self.dataBase.getUserInfo(guildID, user.id)
+            = self.dataBase.getUserInfo(guild.id, user.id)
 
-        guildThreshold = self.dataBase.getServerThreshold(guildID)
+        guildThreshold = self.dataBase.getServerThreshold(guild.id)
 
         # adding emotes based on different stages of streak for current streak only
         # if user has reached 3 or more streak day they get fire streak
@@ -504,8 +511,17 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
         streakClaimedMessage = "You have claimed your streak for today"
 
         # footer message to indicate if the user has received a streak for today
-        footerMessage = streakClaimedMessage if MsgCount >= guildThreshold else f"Word count till streak {guildThreshold - MsgCount}" \
- \
+        if streaked:
+            footerMessage = streakClaimedMessage
+
+        elif self.dataBase.track_voice(guild):
+            guild_voice_threshold = self.dataBase.get_voice_guild_threshold(guild) / 60
+            user_total_voice = self.dataBase.get_user_voice_time(guild, user) / 60
+            footerMessage = f"Word count till streak {guildThreshold - MsgCount} \n{int(guild_voice_threshold - user_total_voice)} Minutes left till streak in voice call "
+
+        else:
+            footerMessage = f"Word count till streak {guildThreshold - MsgCount} "
+
             # userTotalMessages = userTotalMessages if userTotalMessages < 100 else f"{userTotalMessages} "
 
         self.embed = dict(
@@ -580,12 +596,11 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
                       help="``!threshold (amount)``: Set the minimum number of words for a server member to get a streak.")
     async def threshold(self, ctx, total):
 
-        guildOwnerId = ctx.guild.owner_id
-        currentUserId = ctx.author.id
         guildID = ctx.guild.id
+        administrator = ctx.author.guild_permissions.administrator
 
         # if it is not the guild owner ignore | only guild owner can set threshold
-        if currentUserId == guildOwnerId:
+        if administrator:
 
             try:
                 # in case the user has put in words as a digit instead of actual integers
@@ -630,7 +645,7 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
                 title=f"**==DISCORD STREAK HELP==**",
                 color=9127187,
                 thumbnail={
-                    "url": "https://cdn0.iconfinder.com/data/icons/small-n-flat/24/678110-sign-info-512.png"},
+                    "url": "https://cdn3.iconfinder.com/data/icons/shopping-e-commerce-33/980/shopping-24-512.png"},
                 fields=[
                     dict(name="**Categories**",
                          value=f"{list_of_commands}",
@@ -659,7 +674,7 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
 
             )
 
-            await ctx.channel.send(embed=discord.Embed.from_dict(embed))
+            await ctx.channel.send(embed=discord.Embed.from_dict(embed), delete_after=60)
             # no need to go next step
             return
 
@@ -685,7 +700,7 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
                     ],
                     footer=dict(text="We hope you find everything OK!"),
                 )
-                await ctx.channel.send(embed=discord.Embed.from_dict(embed))
+                await ctx.channel.send(embed=discord.Embed.from_dict(embed), delete_after=60)
 
             elif command.lower() in command_event.commands:
 
@@ -702,7 +717,7 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
                     ],
                     footer=dict(text="We hope you find everything OK!"),
                 )
-                await ctx.channel.send(embed=discord.Embed.from_dict(embed))
+                await ctx.channel.send(embed=discord.Embed.from_dict(embed), delete_after=60)
 
             else:
 

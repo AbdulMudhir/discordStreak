@@ -1,11 +1,14 @@
 import sqlite3
 import json
 import time
-
+from datetime import datetime
 start = time.time()
 
 
 class DataBase(sqlite3.Connection):
+
+    today = datetime.today().date().strftime("%d-%m-%Y")
+
 
     def __init__(self, dataBasePath):
         sqlite3.Connection.__init__(self, dataBasePath)
@@ -26,10 +29,16 @@ class DataBase(sqlite3.Connection):
                     highestStreak INTEGER,
                     lastStreakDay TEXT,
                     highMsgCount INTEGER,
+                    active_voice Integer ,
+                    no_active_voice Integer ,
+                    total_voice_time Integer,
+                    track_voice Integer,
+                    voice_threshold Integer,
                     UNIQUE (userID, serverID)
 
                 )
         """)
+
 
     def createGlobalTable(self):
 
@@ -243,8 +252,11 @@ class DataBase(sqlite3.Connection):
         # add user to the database
         # add singular user to the database
         # get the server's threshold
-        self.cursor.execute('SELECT serverThreshold FROM server WHERE serverID = ?', (server.id,))
-        serverThreshold = self.cursor.fetchone()[0]
+        self.cursor.execute('SELECT serverThreshold,voice_threshold, track_voice FROM server WHERE serverID = ?', (server.id,))
+
+        serverThreshold, voice_threshold, track_voice = self.cursor.fetchone()
+
+
         userInfo = {
             'serverID': server.id,
             'serverName': server.name,
@@ -256,10 +268,17 @@ class DataBase(sqlite3.Connection):
             'streaked': 0,
             'highestStreak': 0,
             'lastStreakDay': "Never Streaked",
-            'highMsgCount': 0}
+            'highMsgCount': 0,
+            'active_voice':0,
+            'no_active_voice':0,
+            'total_voice_time':0,
+            'track_voice':track_voice, 
+            'voice_threshold':voice_threshold}
 
-        self.cursor.execute('''INSERT OR IGNORE INTO server(serverName, serverID, userName, userID, serverThreshold,msgCount,streakCounter, streaked, highestStreak, lastStreakDay, highMsgCount)
-                VALUES (:serverName,:serverID,:userName, :userID, :serverThreshold,:msgCount,:streakCounter, :streaked, :highestStreak, :lastStreakDay, :highMsgCount)''',
+        self.cursor.execute('''INSERT OR IGNORE INTO server(serverName, serverID, userName, userID, serverThreshold,msgCount,streakCounter, streaked, highestStreak, lastStreakDay, highMsgCount, active_voice,no_active_voice,
+        total_voice_time, track_voice, voice_threshold)
+                VALUES (:serverName,:serverID,:userName, :userID, :serverThreshold,:msgCount,:streakCounter, :streaked, :highestStreak, :lastStreakDay, :highMsgCount, :active_voice,:no_active_voice,
+                :total_voice_time, :track_voice, :voice_threshold)''',
                             userInfo
                             )
         userInfoGlobal = {
@@ -318,7 +337,12 @@ class DataBase(sqlite3.Connection):
                     'streaked': 0,
                     'highestStreak': 0,
                     'lastStreakDay': "Never Streaked",
-                    'highMsgCount': 0}
+                    'highMsgCount': 0,
+                    'active_voice': 0,
+                    'no_active_voice': 0,
+                    'total_voice_time': 0,
+                    'track_voice': 1,
+                    'voice_threshold':7200}
 
                 userInfoGlobal = {
                     'serverID': server.id,
@@ -333,8 +357,10 @@ class DataBase(sqlite3.Connection):
                     'lastStreakDay': "Never Streaked",
                     'highMsgCount': 0}
 
-                self.cursor.execute('''INSERT OR IGNORE INTO server(serverName, serverID,userName, userID, serverThreshold,msgCount,streakCounter, streaked, highestStreak, lastStreakDay, highMsgCount)
-                                VALUES (:serverName,:serverID, :userName,:userID, :serverThreshold,:msgCount,:streakCounter, :streaked, :highestStreak, :lastStreakDay, :highMsgCount)''',
+                self.cursor.execute('''INSERT OR IGNORE INTO server(serverName, serverID, userName, userID, serverThreshold,msgCount,streakCounter, streaked, highestStreak, lastStreakDay, highMsgCount, active_voice,no_active_voice,
+                              total_voice_time, track_voice, voice_threshold)
+                                      VALUES (:serverName,:serverID,:userName, :userID, :serverThreshold,:msgCount,:streakCounter, :streaked, :highestStreak, :lastStreakDay, :highMsgCount, :active_voice,:no_active_voice,
+                                      :total_voice_time, :track_voice,:voice_threshold )''',
                                     userInfo
                                     )
                 self.cursor.execute('''INSERT OR IGNORE INTO global(serverName, serverID,userName, userID, serverThreshold,msgCount,streakCounter, streaked, highestStreak, lastStreakDay, highMsgCount)
@@ -384,7 +410,7 @@ class DataBase(sqlite3.Connection):
     def setNewDayStats(self):
 
         self.cursor.execute(
-            'UPDATE server SET msgCount = 0, streaked = 0, streakCounter = CASE WHEN msgCount < serverThreshold THEN 0 ELSE streakCounter END')
+            'UPDATE server SET msgCount = 0, streaked = 0, streakCounter = CASE WHEN  streaked = 0 THEN 0 ELSE streakCounter END,total_voice_time = 0, active_voice = 0; ')
         self.cursor.execute(
             'UPDATE global SET msgCount = 0, streaked = 0, streakCounter = CASE WHEN msgCount < serverThreshold THEN 0 ELSE streakCounter END')
         self.commit()
@@ -411,6 +437,7 @@ class DataBase(sqlite3.Connection):
         data = {'time': int(time.time()),
                 'server_id': server.id,
                 'user_id': user.id,
+                'date': self.today,
                 }
 
         self.cursor.execute(
@@ -419,9 +446,20 @@ class DataBase(sqlite3.Connection):
 
         # will be used to calculate how long the user has been in call and not muted
         self.cursor.execute(
-            '''UPDATE server SET total_voice_time = CASE WHEN total_voice_time IS NOT NULL THEN (no_active_voice-active_voice)+total_voice_time ELSE
-            (no_active_voice-active_voice)+0 END, no_active_voice =0,active_voice=0 WHERE userID = :user_id AND serverID =:server_id;''',
+            '''UPDATE server SET total_voice_time =(no_active_voice-active_voice)+total_voice_time, no_active_voice =0,active_voice=0
+            WHERE userID = :user_id AND serverID =:server_id;''',
             data)
+
+        self.cursor.execute('''UPDATE server SET 
+                streaked = CASE WHEN total_voice_time >= voice_threshold THEN 1  ELSE 0 END
+             WHERE userID = :user_id AND serverID =:server_id;
+        ''', data)
+
+        self.cursor.execute('''UPDATE server SET
+        lastStreakDay = CASE WHEN streaked = 1 THEN :date ELSE lastStreakDay END
+             WHERE userID = :user_id AND serverID =:server_id;
+
+        ''', data)
 
         self.commit()
 
@@ -438,7 +476,7 @@ class DataBase(sqlite3.Connection):
         data = {'server_id': server.id}
 
         self.cursor.execute(
-            '''UPDATE server SET track_voice = CASE WHEN track_voice IS NULL THEN  1 ELSE 1 END WHERE serverID = :server_id;''',
+            '''UPDATE server SET track_voice = 1 WHERE serverID = :server_id;''',
             data)
 
         self.commit()
@@ -448,7 +486,7 @@ class DataBase(sqlite3.Connection):
         data = {'server_id': server.id}
 
         self.cursor.execute(
-            '''UPDATE server SET track_voice = CASE WHEN track_voice IS NULL THEN  0 ELSE 0 END WHERE serverID = :server_id;''',
+            '''UPDATE server SET track_voice = 0 WHERE serverID = :server_id;''',
             data)
 
         self.commit()
@@ -457,21 +495,21 @@ class DataBase(sqlite3.Connection):
         data = {'server_id': server.id,
                 'user_id': user.id
                 }
-        self.cursor.execute('''SELECT total_voice_time FROM server WHERE serverID = :server_id AND userID =:user_id;''', data)
+        self.cursor.execute('''SELECT total_voice_time FROM server WHERE serverID = :server_id AND userID =:user_id;''',
+                            data)
 
         return self.cursor.fetchone()[0]
-
 
     def get_voice_guild_threshold(self, server):
         data = {'server_id': server.id,
                 }
-        self.cursor.execute('''SELECT voice_threshold FROM server WHERE serverID = :server_id;''',data)
+        self.cursor.execute('''SELECT voice_threshold FROM server WHERE serverID = :server_id;''', data)
 
         return self.cursor.fetchone()[0]
 
     def set_voice_guild_threshold(self, server, amount):
         data = {'server_id': server.id,
-                'amount':amount}
+                'amount': amount}
 
         # set default to 7200 if there's threshold set for the server
         self.cursor.execute(
@@ -480,15 +518,29 @@ class DataBase(sqlite3.Connection):
 
         self.commit()
 
-    def set_default_voice_threshold(self):
+    def set_default_voice_values(self):
         self.cursor.execute(
-            '''UPDATE server SET voice_threshold = 7200''')
+            '''UPDATE server SET voice_threshold = 7200, track_voice = 1,active_voice = 0, no_active_voice = 0, 
+             total_voice_time = 0''')
 
         self.commit()
 
-    def set_default_voice_track(self):
 
+    def get_voice_status(self, server, user):
+        data = {'server_id': server.id, 'user_id': user.id
+                }
+        self.cursor.execute('''SELECT active_voice FROM server WHERE serverID = :server_id AND userID = :user_id;''',
+                            data)
+
+        return self.cursor.fetchone()[0]
+
+
+
+    def get_current_voice_total(self, server, user):
+        data = {'server_id': server.id, 'user_id': user.id
+                }
         self.cursor.execute(
-            '''UPDATE server SET track_voice = 1''')
+            '''SELECT total_voice_time FROM server WHERE serverID = :server_id AND userID = :user_id;''',
+            data)
 
-        self.commit()
+        return self.cursor.fetchone()[0]
