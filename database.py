@@ -162,22 +162,68 @@ class DataBase(sqlite3.Connection):
                             {'userID': user.id})
         return self.cursor.fetchone()[0]
 
-    def addMessageCount(self, serverID, userID, msgCount):
+    def update_text_streak(self, serverID, userID, msgCount):
         # add message count the users have sent
 
-        userInfo = {'userID': userID, 'serverID': serverID, 'msgCount': msgCount}
+        userInfo = {'userID': userID, 'serverID': serverID, 'msgCount': msgCount, 'date': self.today}
+
         self.cursor.execute(
             'UPDATE server SET msgCount = msgCount + :msgCount, highMsgCount = highMsgCount + :msgCount WHERE serverID = :serverID AND userID = :userID; ',
             userInfo)
 
-        self.cursor.execute('''
-         UPDATE server SET streaked = CASE WHEN msgCount >= serverThreshold THEN 1 ELSE 0 END WHERE serverID = :serverID AND userID = :userID; ''',
-                            userInfo
-                            )
-
         self.cursor.execute(
             'UPDATE global SET msgCount = msgCount + :msgCount, highMsgCount = highMsgCount + :msgCount WHERE userID = :userID; ',
             userInfo)
+
+        # check if the user streaked
+        self.cursor.execute('SELECT streaked FROM server WHERE serverID = :serverID AND userID = :userID ;', userInfo)
+
+        if not self.cursor.fetchone()[0]:
+
+            self.cursor.execute('''
+             UPDATE server SET streaked = CASE WHEN msgCount >= serverThreshold THEN 1 ELSE 0 END WHERE serverID = :serverID AND userID = :userID; ''',
+                                userInfo)
+
+            # add streak counter then add the day they last streaked
+            self.cursor.execute('''UPDATE server SET
+    
+                  streakCounter = CASE WHEN streaked = 1 THEN streakCounter+1 ELSE streakCounter END,
+                  lastStreakDay = CASE WHEN streaked = 1 THEN :date ELSE lastStreakDay END
+    
+                       WHERE serverID = :serverID AND userID = :userID;
+    
+                  ''', userInfo)
+            # check their highest streak to see if it's higher or lower than their current streak
+            self.cursor.execute('''
+                  UPDATE server SET
+                  highestStreak = CASE WHEN streakCounter >= highestStreak THEN streakCounter ELSE highestStreak END
+                       WHERE serverID = :serverID AND userID = :userID;
+                  ''', userInfo)
+
+        # check if the user streaked
+        self.cursor.execute('SELECT streaked FROM global WHERE userID = :userID ;',
+                                userInfo)
+
+        # now we check for global version
+        if not self.cursor.fetchone()[0]:
+
+            self.cursor.execute('''UPDATE global SET streaked = CASE WHEN msgCount >= serverThreshold THEN 1 ELSE 0 END WHERE userID = :userID; ''',
+                                userInfo)
+
+            # add streak counter then add the day they last streaked
+            self.cursor.execute('''UPDATE global SET
+
+                            streakCounter = CASE WHEN streaked = 1 THEN streakCounter+1 ELSE streakCounter END,
+                            lastStreakDay = CASE WHEN streaked = 1 THEN :date ELSE lastStreakDay END
+
+                                 WHERE userID = :userID;
+
+                            ''', userInfo)
+
+            # check their highest streak to see if it's higher or lower than their current streak
+            self.cursor.execute('''UPDATE global SET highestStreak = CASE WHEN streakCounter >= highestStreak THEN streakCounter ELSE highestStreak END WHERE userID = :userID;
+                            ''', userInfo)
+
 
         self.commit()
 
@@ -259,7 +305,6 @@ class DataBase(sqlite3.Connection):
                             (server.id,))
 
         serverThreshold, voice_threshold, track_voice = self.cursor.fetchone()
-
         userInfo = {
             'serverID': server.id,
             'serverName': server.name,
@@ -372,43 +417,6 @@ class DataBase(sqlite3.Connection):
                                     )
                 self.commit()
 
-    def addJsonGuildToSQL(self, guildID, guildThreshold, userID, msgCount, streakCounter, streaked, highestStreak,
-                          lastStreakDay, highestMsgCount):
-        userInfo = {
-            'serverID': guildID,
-            'serverName': None,
-            'userName': None,
-            'userID': userID,
-            'msgCount': msgCount,
-            'serverThreshold': guildThreshold,
-            'streakCounter': streakCounter,
-            'streaked': streaked,
-            'highestStreak': highestStreak,
-            'lastStreakDay': lastStreakDay,
-            'highMsgCount': highestMsgCount}
-
-        self.cursor.execute('''INSERT OR IGNORE INTO server (serverName, serverID,userName, userID, serverThreshold,msgCount,streakCounter, streaked, highestStreak, lastStreakDay, highMsgCount)
-                                        VALUES (:serverName,:serverID, :userName,:userID, :serverThreshold,:msgCount,:streakCounter, :streaked, :highestStreak, :lastStreakDay, :highMsgCount)''',
-                            userInfo
-                            )
-
-        userInfoGlobal = {
-            'serverID': guildID,
-            'serverName': None,
-            'userName': None,
-            'userID': userID,
-            'msgCount': 0,
-            'serverThreshold': 500,
-            'streakCounter': 0,
-            'streaked': 0,
-            'highestStreak': 0,
-            'lastStreakDay': "Never Streaked",
-            'highMsgCount': 0}
-
-        self.cursor.execute('''INSERT OR IGNORE INTO  global (serverName, serverID,userName, userID, serverThreshold,msgCount,streakCounter, streaked, highestStreak, lastStreakDay, highMsgCount)
-                                                VALUES (:serverName,:serverID, :userName,:userID, :serverThreshold,:msgCount,:streakCounter, :streaked, :highestStreak, :lastStreakDay, :highMsgCount)''',
-                            userInfoGlobal
-                            )
 
     def setNewDayStats(self):
 
@@ -418,12 +426,9 @@ class DataBase(sqlite3.Connection):
             'UPDATE global SET msgCount = 0, streaked = 0, streakCounter = CASE WHEN msgCount < serverThreshold THEN 0 ELSE streakCounter END')
         self.commit()
 
-    def add_voice_column(self):
-        self.cursor.execute('''ALTER TABLE server ADD COLUMN  active_voice Integer ;''')
-        self.cursor.execute('''ALTER TABLE server ADD COLUMN  no_active_voice Integer  ;''')
-        self.cursor.execute('''ALTER TABLE server ADD COLUMN  total_voice_time Integer;''')
-        self.cursor.execute('''ALTER TABLE server ADD COLUMN  track_voice Integer;''')
-        self.cursor.execute('''ALTER TABLE server ADD COLUMN  voice_threshold Integer;''')
+    def add_new_column(self):
+
+        self.cursor.execute('''ALTER TABLE server ADD COLUMN  track_word Integer;''')
         self.commit()
 
     def set_voice_join_time(self, server, user):
@@ -475,7 +480,6 @@ class DataBase(sqlite3.Connection):
              WHERE userID = :user_id AND serverID =:server_id;
         ''', data)
 
-
         self.commit()
 
     def track_voice(self, server):
@@ -483,6 +487,14 @@ class DataBase(sqlite3.Connection):
         data = {'server_id': server.id}
 
         self.cursor.execute('''SELECT track_voice FROM server WHERE serverID = :server_id''', data)
+
+        return self.cursor.fetchone()[0]
+
+    def track_word(self, server):
+
+        data = {'server_id': server.id}
+
+        self.cursor.execute('''SELECT track_word FROM server WHERE serverID = :server_id''', data)
 
         return self.cursor.fetchone()[0]
 
@@ -533,12 +545,33 @@ class DataBase(sqlite3.Connection):
 
         self.commit()
 
-    def set_default_voice_values(self):
+    def set_default_values(self):
         self.cursor.execute(
-            '''UPDATE server SET voice_threshold = 7200, track_voice = 1,active_voice = 0, no_active_voice = 0, 
-             total_voice_time = 0''')
+            '''UPDATE server SET voice_threshold = 7200, track_word = 1''')
 
         self.commit()
+
+    def enable_track_word(self, server):
+
+        data = {'server_id': server.id}
+
+        self.cursor.execute(
+            '''UPDATE server SET track_word = 1 WHERE serverID = :server_id;''',
+            data)
+
+        self.commit()
+
+    def disable_track_word(self, server):
+
+        data = {'server_id': server.id}
+
+        self.cursor.execute(
+            '''UPDATE server SET track_word = 0 WHERE serverID = :server_id;''',
+            data)
+
+        self.commit()
+
+
 
     def get_voice_status(self, server, user):
         data = {'server_id': server.id, 'user_id': user.id
