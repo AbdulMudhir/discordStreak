@@ -143,14 +143,19 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
 
         # ignore bots
         if not user.bot:
+            messageLength = len(message.content.split())
+
             # check if the user wants to track words
             if self.dataBase.track_word(guild):
-                messageLength = len(message.content.split())
 
                 self.fillNoneData(message.guild, user)
 
                 # all info are updated on the database such as streaking etc
                 self.dataBase.update_text_streak(guildID, userID, messageLength)
+
+            else:
+
+                self.dataBase.update_word_streak_global(userID, messageLength)
 
     @commands.command(brief="Admin", help="``!voice enable enable`` Enable voice to be counted for streaking\n"
                                           "``!voice disable`` Disable voice to be counted for streaking\n"
@@ -190,49 +195,54 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
                     # unpack the threshold amount to be set
                     command, threshold_amount, *other_arguments = args
 
-                    # try convert the given digit into
-                    try:
-                        threshold_amount = int(threshold_amount)
+                    if self.dataBase.track_voice(guild):
 
-                    except ValueError:
+                        # try convert the given digit into
+                        try:
+                            threshold_amount = int(threshold_amount)
 
-                        await ctx.channel.send("Invalid digit sent")
+                        except ValueError:
 
-                    # if no other arguments were passed in (minutes | hours)
-                    if not other_arguments:
+                            await ctx.channel.send("Invalid digit sent")
 
-                        self.dataBase.set_voice_guild_threshold(guild, threshold_amount)
+                        # if no other arguments were passed in (minutes | hours)
+                        if not other_arguments:
 
+                            self.dataBase.set_voice_guild_threshold(guild, threshold_amount)
+
+                            await ctx.channel.send(
+                                f"New voice threshold has been set to {threshold_amount:0,} seconds for {guild.name}\n",
+                                delete_after=10)
+
+                        # if the user has given minutes argument convert it to seconds then update database
+                        elif other_arguments[0].startswith('minute'):
+
+                            convert_threshold_amount = threshold_amount * 60
+
+                            self.dataBase.set_voice_guild_threshold(guild, convert_threshold_amount)
+
+                            await ctx.channel.send(
+                                f"New voice threshold has been set to {threshold_amount:0,} minute for {guild.name}\n",
+                                delete_after=10)
+
+                        # if the user has given hour argument convert it to seconds then update database
+                        elif other_arguments[0].startswith('hour'):
+
+                            convert_threshold_amount = (threshold_amount * 60) * 60
+
+                            self.dataBase.set_voice_guild_threshold(guild, convert_threshold_amount)
+
+                            await ctx.channel.send(
+                                f"New voice threshold has been set to {threshold_amount:0,} hour for {guild.name}\n",
+                                delete_after=10)
+                    else:
                         await ctx.channel.send(
-                            f"New voice threshold has been set to {threshold_amount:0,} seconds for {guild.name}\n",
+                            'Please enable voice to be counted for streaks before you can set threshold. !voice enable',
                             delete_after=10)
 
-                    # if the user has given minutes argument convert it to seconds then update database
-                    elif other_arguments[0].startswith('minute'):
-
-                        convert_threshold_amount = threshold_amount * 60
-
-                        self.dataBase.set_voice_guild_threshold(guild, convert_threshold_amount)
-
-                        await ctx.channel.send(
-                            f"New voice threshold has been set to {threshold_amount:0,} minute for {guild.name}\n",
-                            delete_after=10)
-
-                    # if the user has given hour argument convert it to seconds then update database
-                    elif other_arguments[0].startswith('hour'):
-
-                        convert_threshold_amount = (threshold_amount * 60) * 60
-
-                        self.dataBase.set_voice_guild_threshold(guild, convert_threshold_amount)
-
-                        await ctx.channel.send(
-                            f"New voice threshold has been set to {threshold_amount:0,} hour for {guild.name}\n",
-                            delete_after=10)
-
-    @commands.command(brief="Admin", help="``!word enable `` Enable voice to be counted for streaking\n"
-                                          "``!word disable`` Disable voice to be counted for streaking\n"
-                                          "``!word threshold (amount)``\n"
-                                          " Set the minimum number of words for a server member to get a streak."
+    @commands.command(brief="Admin", help="``!word enable `` Enable words to be counted for streaking\n"
+                                          "``!word disable`` Disable words to be counted for streaking\n"
+                                          "``!word threshold (amount) Set the minimum number of words for a server member to get a streak.``\n"
                       )
     async def word(self, ctx, *args):
         administrator = ctx.author.guild_permissions.administrator
@@ -246,7 +256,8 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
                 if command == "enable":
 
                     # check if the guild command has already been enabled otherwise enable it
-                    if not self.dataBase.track_voice(guild):
+                    if not self.dataBase.track_word(guild):
+
                         self.dataBase.enable_track_word(guild)
                         await ctx.channel.send("Words will now be counted for streak!", delete_after=10)
 
@@ -255,7 +266,7 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
 
                 # check if the guild command was already disabled other wise enable it
                 elif command == "disable":
-                    if self.dataBase.track_voice(guild):
+                    if self.dataBase.track_word(guild):
                         self.dataBase.disable_track_word(guild)
                         await ctx.channel.send("Words will not be counted for streak!", delete_after=10)
                     else:
@@ -271,14 +282,18 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
                     try:
                         threshold_amount = int(threshold_amount)
 
-                        self.dataBase.setServerThreshold(guild.id, threshold_amount)
+                        if self.dataBase.track_word(guild):
+                            self.dataBase.setServerThreshold(guild.id, threshold_amount)
+                            await ctx.channel.send(
+                                f"New message threshold has been set for the server to {threshold_amount:0,}")
 
-                        await ctx.channel.send(
-                            f"New message threshold has been set for the server to {threshold_amount:0,}")
+                        else:
+                            await ctx.channel.send(
+                                'Please enable words to be counted for streaks before you can set threshold. !word enable',
+                                delete_after=10)
 
                     except ValueError:
-
-                        await ctx.channel.send("Invalid digit sent")
+                        await ctx.channel.send("Invalid digit sent. Example - !word threshold 500", delete_after=10)
 
     # this is temporary till all none data is filled
     def fillNoneData(self, guild, user):

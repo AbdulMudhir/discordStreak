@@ -179,7 +179,6 @@ class DataBase(sqlite3.Connection):
         self.cursor.execute('SELECT streaked FROM server WHERE serverID = :serverID AND userID = :userID ;', userInfo)
 
         if not self.cursor.fetchone()[0]:
-
             self.cursor.execute('''
              UPDATE server SET streaked = CASE WHEN msgCount >= serverThreshold THEN 1 ELSE 0 END WHERE serverID = :serverID AND userID = :userID; ''',
                                 userInfo)
@@ -202,13 +201,13 @@ class DataBase(sqlite3.Connection):
 
         # check if the user streaked
         self.cursor.execute('SELECT streaked FROM global WHERE userID = :userID ;',
-                                userInfo)
+                            userInfo)
 
         # now we check for global version
         if not self.cursor.fetchone()[0]:
-
-            self.cursor.execute('''UPDATE global SET streaked = CASE WHEN msgCount >= serverThreshold THEN 1 ELSE 0 END WHERE userID = :userID; ''',
-                                userInfo)
+            self.cursor.execute(
+                '''UPDATE global SET streaked = CASE WHEN msgCount >= serverThreshold THEN 1 ELSE 0 END WHERE userID = :userID; ''',
+                userInfo)
 
             # add streak counter then add the day they last streaked
             self.cursor.execute('''UPDATE global SET
@@ -224,6 +223,41 @@ class DataBase(sqlite3.Connection):
             self.cursor.execute('''UPDATE global SET highestStreak = CASE WHEN streakCounter >= highestStreak THEN streakCounter ELSE highestStreak END WHERE userID = :userID;
                             ''', userInfo)
 
+        self.commit()
+
+    # this is in case the user has decided to disable words to be counted for their server
+    def update_word_streak_global(self, userID, msgCount):
+
+        userInfo = {'userID': userID, 'msgCount': msgCount, 'date': self.today}
+
+        # keep track of word count
+        self.cursor.execute(
+            'UPDATE global SET msgCount = msgCount + :msgCount, highMsgCount = highMsgCount + :msgCount WHERE userID = :userID; ',
+            userInfo)
+
+        # check if the user streaked
+        self.cursor.execute('SELECT streaked FROM global WHERE userID = :userID ;',
+                            userInfo)
+
+        # now we check for global version
+        if not self.cursor.fetchone()[0]:
+            self.cursor.execute(
+                '''UPDATE global SET streaked = CASE WHEN msgCount >= serverThreshold THEN 1 ELSE 0 END WHERE userID = :userID; ''',
+                userInfo)
+
+            # add streak counter then add the day they last streaked
+            self.cursor.execute('''UPDATE global SET
+
+                                 streakCounter = CASE WHEN streaked = 1 THEN streakCounter+1 ELSE streakCounter END,
+                                 lastStreakDay = CASE WHEN streaked = 1 THEN :date ELSE lastStreakDay END
+
+                                      WHERE userID = :userID;
+
+                                 ''', userInfo)
+
+            # check their highest streak to see if it's higher or lower than their current streak
+            self.cursor.execute('''UPDATE global SET highestStreak = CASE WHEN streakCounter >= highestStreak THEN streakCounter ELSE highestStreak END WHERE userID = :userID;
+                                 ''', userInfo)
 
         self.commit()
 
@@ -417,7 +451,6 @@ class DataBase(sqlite3.Connection):
                                     )
                 self.commit()
 
-
     def setNewDayStats(self):
 
         self.cursor.execute(
@@ -570,8 +603,6 @@ class DataBase(sqlite3.Connection):
             data)
 
         self.commit()
-
-
 
     def get_voice_status(self, server, user):
         data = {'server_id': server.id, 'user_id': user.id
