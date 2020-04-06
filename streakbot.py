@@ -101,9 +101,14 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
                                 print("moved channel while muted")
                                 return
                             else:
-                                # user moved channel unmuted
-                                print("user has moved channel un-muted")
-                                return
+                                if previous_voice_state.afk:
+                                    print("user has left afk channel")
+                                    self.dataBase.set_voice_join_time(guild, user)
+                                    return
+                                else:
+                                    # user moved channel unmuted
+                                    print("user has moved channel un-muted")
+                                    return
                         # if the user is currently muted
                         if user_current_mute_state:
                             # if the user was muted but was not in a call before (it's for user that joins a stream)
@@ -119,8 +124,59 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
                     else:
 
                         if not previous_voice_state.afk and not user_current_mute_state:
-                            print("user has been moved to afk")
-                            self.dataBase.update_voice_time(guild, user)
+                            if user_active_voice_time != 0:
+                                print("user has been moved to afk")
+                                self.dataBase.update_voice_time(guild, user)
+
+    @commands.Cog.listener()
+    async def on_message(self, message):
+
+        user = message.author
+        userID = user.id
+        guildID = message.guild.id
+        guild = message.guild
+
+        # ignore bots
+        if not user.bot:
+
+            messageLength = len(message.content.split())
+
+            # add the length of the message to the database to track
+            self.dataBase.addMessageCount(guildID, userID, messageLength)
+            # retrieve user message count
+            # try and retrieve message count
+            try:
+                msgCount = self.dataBase.getMessageCount(guildID, user.id)
+            except TypeError:
+                # if it doesnt exist means user doesn't exist
+                self.dataBase.addUser(guild, user)
+                # now retrieve the user's message count
+                msgCount = self.dataBase.getMessageCount(guildID, user.id)
+
+            # retrieve server message threshold
+            guildThreshold = self.dataBase.getServerThreshold(guildID)
+            # check if they had streaked
+            streaked = self.dataBase.checkUserStreaked(guildID, userID)
+
+            # get stats for the global version
+            try:
+                streakedGlobal = self.dataBase.checkUserGlobalStreaked(userID)
+            except TypeError:
+                # will be used if the user does not exist in the global leaderboard by accident
+                self.dataBase.add_user_global(guild, user)
+                streakedGlobal = self.dataBase.checkUserGlobalStreaked(userID)
+
+            globalThreshold = self.dataBase.getGlobalThreshold()
+            msgCountGlobal = self.dataBase.getMessageCountGlobal(userID)
+
+            self.fillNoneData(message.guild, user)
+
+            # give streak if they had streaked.
+            if msgCount >= guildThreshold and not streaked:
+                self.dataBase.addStreakToUser(guildID, userID, self.today)
+
+            if msgCountGlobal >= globalThreshold and not streakedGlobal:
+                self.dataBase.addGlobalStreakUser(userID, self.today)
 
     @commands.command(brief="Admin", help="``!voice enable enable`` Enable voice to be counted for streaking\n"
                                           "``!voice disable`` Disable voice to be counted for streaking\n"
@@ -199,55 +255,6 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
                             f"New voice threshold has been set to {threshold_amount:0,} hour for {guild.name}\n",
                             delete_after=10)
 
-    @commands.Cog.listener()
-    async def on_message(self, message):
-
-        user = message.author
-        userID = user.id
-        guildID = message.guild.id
-        guild = message.guild
-
-        # ignore bots
-        if not user.bot:
-
-            messageLength = len(message.content.split())
-
-            # add the length of the message to the database to track
-            self.dataBase.addMessageCount(guildID, userID, messageLength)
-            # retrieve user message count
-            # try and retrieve message count
-            try:
-                msgCount = self.dataBase.getMessageCount(guildID, user.id)
-            except TypeError:
-                # if it doesnt exist means user doesn't exist
-                self.dataBase.addUser(guild, user)
-                # now retrieve the user's message count
-                msgCount = self.dataBase.getMessageCount(guildID, user.id)
-
-            # retrieve server message threshold
-            guildThreshold = self.dataBase.getServerThreshold(guildID)
-            # check if they had streaked
-            streaked = self.dataBase.checkUserStreaked(guildID, userID)
-
-            # get stats for the global version
-            try:
-                streakedGlobal = self.dataBase.checkUserGlobalStreaked(userID)
-            except TypeError:
-                # will be used if the user does not exist in the global leaderboard by accident
-                self.dataBase.add_user_global(guild, user)
-                streakedGlobal = self.dataBase.checkUserGlobalStreaked(userID)
-
-            globalThreshold = self.dataBase.getGlobalThreshold()
-            msgCountGlobal = self.dataBase.getMessageCountGlobal(userID)
-
-            self.fillNoneData(message.guild, user)
-
-            # give streak if they had streaked.
-            if msgCount >= guildThreshold and not streaked:
-                self.dataBase.addStreakToUser(guildID, userID, self.today)
-
-            if msgCountGlobal >= globalThreshold and not streakedGlobal:
-                self.dataBase.addGlobalStreakUser(userID, self.today)
 
     # this is temporary till all none data is filled
     def fillNoneData(self, guild, user):
