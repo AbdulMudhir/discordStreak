@@ -335,10 +335,11 @@ class DataBase(sqlite3.Connection):
         # add user to the database
         # add singular user to the database
         # get the server's threshold
-        self.cursor.execute('SELECT serverThreshold,voice_threshold, track_voice FROM server WHERE serverID = ?',
-                            (server.id,))
+        self.cursor.execute(
+            'SELECT serverThreshold,voice_threshold, track_voice, track_word FROM server WHERE serverID = ?',
+            (server.id,))
 
-        serverThreshold, voice_threshold, track_voice = self.cursor.fetchone()
+        serverThreshold, voice_threshold, track_voice, track_word = self.cursor.fetchone()
         userInfo = {
             'serverID': server.id,
             'serverName': server.name,
@@ -355,12 +356,13 @@ class DataBase(sqlite3.Connection):
             'no_active_voice': 0,
             'total_voice_time': 0,
             'track_voice': track_voice,
-            'voice_threshold': voice_threshold}
+            'voice_threshold': voice_threshold,
+            'track_word': track_word}
 
         self.cursor.execute('''INSERT OR IGNORE INTO server(serverName, serverID, userName, userID, serverThreshold,msgCount,streakCounter, streaked, highestStreak, lastStreakDay, highMsgCount, active_voice,no_active_voice,
-        total_voice_time, track_voice, voice_threshold)
+        total_voice_time, track_voice, voice_threshold, track_word)
                 VALUES (:serverName,:serverID,:userName, :userID, :serverThreshold,:msgCount,:streakCounter, :streaked, :highestStreak, :lastStreakDay, :highMsgCount, :active_voice,:no_active_voice,
-                :total_voice_time, :track_voice, :voice_threshold)''',
+                :total_voice_time, :track_voice, :voice_threshold, :track_word)''',
                             userInfo
                             )
         userInfoGlobal = {
@@ -424,7 +426,8 @@ class DataBase(sqlite3.Connection):
                     'no_active_voice': 0,
                     'total_voice_time': 0,
                     'track_voice': 1,
-                    'voice_threshold': 7200}
+                    'voice_threshold': 7200,
+                    'track_word': 1}
 
                 userInfoGlobal = {
                     'serverID': server.id,
@@ -440,9 +443,9 @@ class DataBase(sqlite3.Connection):
                     'highMsgCount': 0}
 
                 self.cursor.execute('''INSERT OR IGNORE INTO server(serverName, serverID, userName, userID, serverThreshold,msgCount,streakCounter, streaked, highestStreak, lastStreakDay, highMsgCount, active_voice,no_active_voice,
-                              total_voice_time, track_voice, voice_threshold)
+                              total_voice_time, track_voice, voice_threshold, track_word)
                                       VALUES (:serverName,:serverID,:userName, :userID, :serverThreshold,:msgCount,:streakCounter, :streaked, :highestStreak, :lastStreakDay, :highMsgCount, :active_voice,:no_active_voice,
-                                      :total_voice_time, :track_voice,:voice_threshold )''',
+                                      :total_voice_time, :track_voice,:voice_threshold, :track_word )''',
                                     userInfo
                                     )
                 self.cursor.execute('''INSERT OR IGNORE INTO global(serverName, serverID,userName, userID, serverThreshold,msgCount,streakCounter, streaked, highestStreak, lastStreakDay, highMsgCount)
@@ -620,3 +623,37 @@ class DataBase(sqlite3.Connection):
             data)
 
         return self.cursor.fetchone()[0]
+
+    def get_server_channels(self, server):
+        data = {'server_id': server.id}
+
+        self.cursor.execute('''
+            SELECT serverChannels FROM server where serverID = :server_id
+        ''', data)
+
+        return self.cursor.fetchone()[0]
+
+    def add_server_channel(self, server, channel):
+
+        data = {'server_id': server.id, 'channel_id': channel.id}
+        self.cursor.execute('''
+                   UPDATE server SET serverChannels = CASE WHEN serverChannels IS NULL THEN :channel_id ELSE serverChannels || :channel_id END
+                   WHERE serverID = :server_id
+               ''', data)
+
+        self.commit()
+
+    def remove_server_channel(self, server, channel):
+        data = {'server_id': server.id, 'channel_id': channel.id}
+
+        self.cursor.execute('''SELECT serverChannels FROM server WHERE serverID = :server_id''', data)
+
+        # removing the channel id that was stored in the database
+        server_channels = self.cursor.fetchone()[0].replace(str(channel.id), "")
+
+        updated_data = {'server_id': server.id, 'channels': server_channels}
+
+        self.cursor.execute('''
+                          UPDATE server SET serverChannels = :channels WHERE serverID = :server_id''', updated_data)
+
+        self.commit()
