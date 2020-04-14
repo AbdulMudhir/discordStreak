@@ -4,10 +4,10 @@ from discord.ext import tasks
 from datetime import datetime
 from database import DataBase
 import dbl
-
+from discord.ext.commands import MissingPermissions
 from discord.ext.commands import CommandError
 
-bot = commands.Bot(command_prefix='.')
+bot = commands.Bot(command_prefix='!')
 
 
 class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal User", help="I'm a mysterious command.")):
@@ -26,8 +26,6 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
 
         # self.dataBase.createTable()
         # self.dataBase.createGlobalTable()
-        # self.dataBase.add_new_column()
-        # self.dataBase.set_default_values()
 
     async def change_profile_picture(self):
         with open('snapchat.png', 'rb') as f:
@@ -37,16 +35,32 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
     async def on_ready(self):
         print(f'We have logged in as {self.bot.user}\n')
         self.dateCheck.start()
-        # self.scanCurrentServer()
+        #self.scanCurrentServer()
 
-    # @commands.Cog.listener()
-    # async def on_command_error(self, ctx, error):
-    #     if isinstance(error, CommandError):
-    #         return
-    #     raise error
+    @commands.Cog.listener()
+    async def on_command_error(self, ctx, error):
+        if isinstance(error, CommandError):
+            return
+        raise error
 
     async def on_guild_post(self):
         print("Server count posted successfully")
+
+    @commands.Cog.listener()
+    async def on_guild_channel_delete(self, channel):
+        channel_guild_from = channel.guild
+        channel_id = str(channel.id)
+
+        server_channels_to_monitor = self.dataBase.get_server_channels(channel_guild_from)
+
+        # if the server has set a specific channel to monitor prior
+        if server_channels_to_monitor is not None:
+
+            if channel_id in server_channels_to_monitor:
+                # remove that channel provided
+                self.dataBase.remove_server_channel(channel_guild_from, channel)
+
+                print(f"{channel} was removed from database as it was deleted from the server")
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, user, previous_voice_state, current_voice_state):
@@ -146,13 +160,16 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
             messageLength = len(message.content.split())
             channel_message_from = str(message.channel.id)
 
+            self.fillNoneData(message.guild, user)
+
             # check if the user wants to track words
             if self.dataBase.track_word(guild):
 
                 server_channels_to_monitor = self.dataBase.get_server_channels(guild)
 
                 # if no channels were assigned then we track all the channels
-                if server_channels_to_monitor is None:
+                if server_channels_to_monitor is None or len(server_channels_to_monitor) == 0:
+
 
                     # all info are updated on the database such as streaking etc
                     self.dataBase.update_text_streak(guildID, userID, messageLength)
@@ -160,15 +177,12 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
                 # will be used to monitor specific channels
 
                 elif channel_message_from in server_channels_to_monitor:
-                    print("I am monitoring this channel!")
-                else:
-                    print("invalid channel")
+                
+                    self.dataBase.update_text_streak(guildID, userID, messageLength)
 
-
-            self.fillNoneData(message.guild, user)
             self.dataBase.update_word_streak_global(userID, messageLength)
 
-    @commands.command(brief="Admin", help="``!voice enable enable`` Enable voice to be counted for streaking\n"
+    @commands.command(brief="Admin", help="``!voice enable`` Enable voice to be counted for streaking\n"
                                           "``!voice disable`` Disable voice to be counted for streaking\n"
                                           "``!voice threshold (amount) optional:(minute|hour)``\n"
                                           "Set the threshold for how long the user needs to be in call to gain a streak"
@@ -301,18 +315,18 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
                     if not self.dataBase.track_word(guild):
 
                         self.dataBase.enable_track_word(guild)
-                        await ctx.channel.send("Words will now be counted for streak!", delete_after=10)
+                        await ctx.channel.send("Words will now be counted for streak!")
 
                     else:
-                        await ctx.channel.send("Words are already counted for streak!", delete_after=10)
+                        await ctx.channel.send("Words are already counted for streak!")
 
                 # check if the guild command was already disabled other wise enable it
                 elif command == "disable":
                     if self.dataBase.track_word(guild):
                         self.dataBase.disable_track_word(guild)
-                        await ctx.channel.send("Words will not be counted for streak!", delete_after=10)
+                        await ctx.channel.send("Words will not be counted for streak!")
                     else:
-                        await ctx.channel.send("Words are already disabled for streak!", delete_after=10)
+                        await ctx.channel.send("Words are already disabled for streak!")
 
                 # will be used to track the
                 elif 'threshold' in command:
@@ -337,120 +351,189 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
                     except ValueError:
                         await ctx.channel.send("Invalid digit sent. Example - !word threshold 500", delete_after=10)
 
-    @commands.command(brief="Admin", help="``!word enable `` Enable words to be counted for streaking\n"
-                                          "``!word disable`` Disable words to be counted for streaking\n"
-                                          "``!word threshold (amount) Set the minimum number of words for a server member to get a streak.``\n"
-                      )
-    async def channel(self, ctx, *args):
+    @commands.command(brief="Admin",
+                      help="``!add <#channel_name> `` add a text-channel for monitoring. You can add up to 3 text-channel per command by doing the following "
+                           "``!add <#channel_name> <#channel_name> <#channel_name>``")
+    async def add(self, ctx):
 
         # only need first 3
         channel_mentioned = ctx.message.channel_mentions[:3]
         guild = ctx.guild
-        channel_user_in = ctx.message.channel
+        administrator = ctx.author.guild_permissions.administrator
+        if administrator or ctx.author.id == 125604422007914497:
+            check_words_is_tracked = self.dataBase.track_word(guild)
 
-        server_channels_to_monitor = self.dataBase.get_server_channels(guild)
-
-        if not args:
-
-            if not channel_mentioned:
-
-                # check if the channel is already in the database
-                # server_channels_to monitor is only converted to str for when the server channel is empty
-                if not str(channel_user_in.id) in str(server_channels_to_monitor):
-
-                    self.dataBase.add_server_channel(guild, channel_user_in)
-
-                    await ctx.channel.send(f"#{ctx.message.channel} is now been tracked for streaking!",
-                                           delete_after=10)
-                else:
-                    await ctx.channel.send(f"#{ctx.message.channel} is already tracked for streaking!", delete_after=10)
-
-        elif len(args) <= 4:
-
-            command = args[0]
-            # will be used to remove text-channel from monitoring need to make sure only 3 channels are passed in
-            if command == "remove":
+            if check_words_is_tracked:
+                server_channels_to_monitor = self.dataBase.get_server_channels(guild)
 
                 # if the server has set a specific channel to monitor prior
                 if server_channels_to_monitor is not None:
 
+                    if not channel_mentioned:
+                        await ctx.channel.send("Specify a text-channel to add. ``!add <#channel_name>``")
+
+                    else:
+                        channel_names = []
+                        channel_exist = []
+
+                        # loop through the channels mentioned
+                        for channel in channel_mentioned:
+
+                            # check if the channel id exist on database
+                            if str(channel.id) in server_channels_to_monitor:
+                                channel_exist.append(f"``#{channel.name}``")
+
+                            else:
+                                channel_names.append(f"``#{channel.name}``")
+                                self.dataBase.add_server_channel(guild, channel)
+
+                        filtered_channel_names = " and ".join(channel_exist)
+                        filtered_channel_addition = " and ".join(channel_names)
+
+                        if len(filtered_channel_names) > 0:
+                            await ctx.channel.send(
+                                f"{filtered_channel_names} {'are' if len(channel_exist) > 1 else 'is'} already tracked for streaking!")
+
+                        if len(filtered_channel_addition) > 0:
+                            await ctx.channel.send(
+                                f"{filtered_channel_addition} {'are' if len(channel_names) > 1 else 'is'} now been tracked for streaking!")
+
+                else:
                     channel_names = []
                     # loop through the channels mentioned
                     for channel in channel_mentioned:
-                        # check if the channel id exist on database
-                        if str(channel.id) in server_channels_to_monitor:
-
-                            # if it does append to channel_names to be used to send to channel
-                            channel_names.append(f"``#{channel.name}``")
-
-                            # remove that channel provided
-                            self.dataBase.remove_server_channel(guild, channel)
-
-                        else:
-                            #
-                            await ctx.channel.send(f"``#{channel.name}`` was never monitored", delete_after = 10)
+                        channel_names.append(f"``#{channel.name}``")
+                        self.dataBase.add_server_channel(guild, channel)
 
                     filtered_channel_names = " and ".join(channel_names)
+                    await ctx.channel.send(
+                        f"{filtered_channel_names} {'are' if len(channel_names) > 1 else 'is'} now been tracked for streaking!")
+            else:
+                await ctx.channel.send("Enable words to be tracked first! ``!word enable``")
 
-                    if len(filtered_channel_names) > 0:
+    @commands.command(brief="Admin",
+                      help="``!remove <#channel_name>`` remove a text-channel for monitoring. You can remove up to 3 text-channel per command by doing the following "
+                           "``!remove <#channel_name> <#channel_name> <#channel_name>``")
+    async def remove(self, ctx):
 
-                        await ctx.channel.send(f"{filtered_channel_names} have been removed for streaking!", delete_after=10)
+        # only need first 3
+        channel_mentioned = ctx.message.channel_mentions[:3]
+        guild = ctx.guild
+        administrator = ctx.author.guild_permissions.administrator
+
+        if administrator or ctx.author.id == 125604422007914497:
+
+            check_words_is_tracked = self.dataBase.track_word(guild)
+
+            if check_words_is_tracked:
+
+                server_channels_to_monitor = self.dataBase.get_server_channels(guild)
+
+                # if the server has set a specific channel to monitor prior
+                if server_channels_to_monitor is not None:
+
+                    if not channel_mentioned:
+                        await ctx.channel.send("Specify a text-channel to remove. ``!remove <#channel_name>``")
 
                     else:
-                        pass
+                        channel_names = []
+                        channel_not_exist = []
+                        # loop through the channels mentioned
+                        for channel in channel_mentioned:
+                            # check if the channel id exist on database
+                            if str(channel.id) in server_channels_to_monitor:
+
+                                # if it does append to channel_names to be used to send to channel
+                                channel_names.append(f"``#{channel.name}``")
+
+                                # remove that channel provided
+                                self.dataBase.remove_server_channel(guild, channel)
+
+                            else:
+                                channel_not_exist.append(f"``#{channel.name}``")
+
+                        filtered_channel_names = " and ".join(channel_names)
+                        filtered_channel_not_exist = " and ".join(channel_not_exist)
+
+                        if len(filtered_channel_names) > 0:
+                            await ctx.channel.send(
+                                f"{filtered_channel_names} {'are' if len(channel_names) > 1 else 'is'} removed for streaking!")
+
+                        if len(filtered_channel_not_exist) > 0:
+                            await ctx.channel.send(
+                                f"{filtered_channel_not_exist}  {'do not' if len(channel_not_exist) > 1 else 'does'} exist on the streaking database")
 
                 else:
                     await ctx.channel.send(
-                        "You have not set a specific channel for me to keep count of! Use !track #channelname")
+                        "You need to setup a specific channel for me to monitor first, !add <#channel_name>",
+                        delete_after=10)
+            else:
+                await ctx.channel.send("Enable words to be tracked first! ``!word enable``")
 
-            elif command == "add":
+    @commands.command(brief="Admin", help="The current configuration for this server")
+    async def settings(self, ctx):
+        administrator = ctx.author.guild_permissions.administrator
 
-                # if the server has set a specific channel to monitor prior
-                if server_channels_to_monitor is not None:
+        guild = ctx.guild
 
-                    channel_names = []
-                    channel_exist = []
+        guild_id = guild.id
 
-                    # loop through the channels mentioned
-                    for channel in channel_mentioned:
+        if administrator or ctx.author.id == 125604422007914497:
+            # how many members the guild has
+            totalUsers = len(guild.members)
 
-                        # check if the channel id exist on database
-                        if str(channel.id) in server_channels_to_monitor:
-                            channel_exist.append(f"``#{channel.name}``")
+            totalChannels = len(guild.channels)
 
-                        else:
-                            channel_names.append(f"``#{channel.name}``")
-                            self.dataBase.add_server_channel(guild, channel)
+            server_channels_monitor = self.dataBase.get_server_channels(guild)
+            # check if any server exist
+            if server_channels_monitor is None or len(server_channels_monitor) == 0:
+                channels_monitored = ":small_blue_diamond: All Text-channels are monitored.\n" \
+                                     ":small_blue_diamond:``!add <#channel_name>`` customise the channels to monitor "
 
-                    filtered_channel_names = " and ".join(channel_exist)
-                    filtered_channel_addition =" and ".join(channel_names)
+            else:
+                channels_monitored = " ".join(
+                    [f":small_blue_diamond: ``#{channel.name}\n``" for channel in guild.channels if
+                     str(channel.id) in server_channels_monitor])
 
-                    if len(filtered_channel_names) > 0:
+            # the threshold(total messages to achieve to streak) the guild has been set to
+            guildThreshold = self.dataBase.getServerThreshold(guild_id)
 
-                        await ctx.channel.send(f"{filtered_channel_names} {'are' if len(channel_exist)>1 else 'is'} already tracked for streaking!")
+            guild_voice_threshold = self.dataBase.get_voice_guild_threshold(guild) / 60
 
-                    if len(filtered_channel_addition) > 0:
+            if self.dataBase.track_voice(guild) and self.dataBase.track_word(guild):
 
-                        await ctx.channel.send(f"#{filtered_channel_addition} {'are' if len(channel_names)>1 else 'is'} now been tracked for streaking!", delete_after=10)
+                guild_streak_tracker = f":small_blue_diamond: **The server's threshold for voice:**  {int(guild_voice_threshold):0,} minutes\n" \
+                                       f":small_blue_diamond: **The server's threshold for words**   {guildThreshold:0,}"
 
+            elif self.dataBase.track_word(guild):
+                guild_streak_tracker = f":small_blue_diamond:  **The server's threshold for words**   {guildThreshold:0,}\n" \
+                                       f":small_blue_diamond:  **This server has disabled voice monitoring**"
 
-                else:
-                    # loop through the channels mentioned
-                    for channel in channel_mentioned:
-                        self.dataBase.add_server_channel(guild, channel)
-                        await ctx.channel.send(f"#{channel} is now been tracked for streaking!", delete_after=10)
+            elif self.dataBase.track_voice(guild):
+                guild_streak_tracker = f":small_blue_diamond:**The server's threshold for voice:**  {int(guild_voice_threshold):0,} minutes\n" \
+                                       f":small_blue_diamond:  **This server has disabled words monitoring**"
 
-        # administrator = ctx.author.guild_permissions.administrator
-        # if administrator or ctx.author.id == 125604422007914497:
-        #
-        #     text_channel_mentioned = ctx.channel.mention
-        #     guild = ctx.author.guild
-        #
-        #     if not args:
-        #
-        #         await ctx.channel.send(text_channel_mentioned)
-        #
-        #         command = ' '.join(args)
+            else:
+                guild_streak_tracker = f":small_blue_diamond: **This server has disabled words monitoring:**\n" \
+                                       f":small_blue_diamond:  **This server has disabled voice monitoring:**"
+
+            self.embed = dict(
+                title=f"**=={str(guild).upper()} STREAK SETTINGS==**",
+                color=9127187,
+                description=f"{guild_streak_tracker}.\n",
+                thumbnail={"url": f"{guild.icon_url}"},
+                fields=[dict(name=f"**====================** \n", value=f":book: Total Users in this server\n"
+                                                                        f":book: Total Channels in this server\n"
+                                                                        "====================", inline=True),
+                        dict(name="**====================**", value=f":white_small_square:    {totalUsers:0,}\n"
+                                                                    f":white_small_square:    {totalChannels:0,}\n"
+                                                                    f"====================", inline=True),
+                        dict(name="Text-Channels Monitored",
+                             value=f"{channels_monitored}", inline=False), ],
+
+                footer=dict(text=f"HAPPY STREAKING!"),
+            )
+            await ctx.channel.send(embed=discord.Embed.from_dict(self.embed))
 
     # this is temporary till all none data is filled
     def fillNoneData(self, guild, user):
@@ -550,7 +633,7 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
                         dict(name="Total Words Sent", value=usersTotalMessages, inline=True)],
                 footer=dict(text=f"Total Words counted on {self.today} ")
             )
-            await ctx.channel.send(embed=discord.Embed.from_dict(self.embed), delete_after=60)
+            await ctx.channel.send(embed=discord.Embed.from_dict(self.embed))
 
     async def globalLeaderBoard(self, ctx):
 
@@ -578,6 +661,8 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
         usersTotalMessages = '\n'.join([f'{user[4]:0,}' for user in leaderBoard])
         usersStreakDays = '\n'.join([str(user[5]) for user in leaderBoard])
 
+        global_threshold = self.dataBase.getGlobalThreshold()
+
         self.embed = dict(
             title=f"**==GLOBAL STREAK LEADERBOARD==**",
             color=9127187,
@@ -586,22 +671,23 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
             fields=[dict(name="**Users**", value=userNames, inline=True),
                     dict(name="Streak Total", value=usersStreakDays, inline=True),
                     dict(name="Words Sent Today", value=usersTotalMessages, inline=True)],
-            footer=dict(text=f"Total Words counted on {self.today} | Threshold for Global is 500 word Count\n"
-                             f"Voice time are not counted towards global leaderboard")
+            footer=dict(
+                text=f"Total Words counted on {self.today} | Threshold for Global is {global_threshold} (+5 per day) word Count\n"
+                     f"Voice time are not counted towards global leaderboard")
         )
         await ctx.channel.send(embed=discord.Embed.from_dict(self.embed))
 
     # checking for the dates if its a new day
-    @tasks.loop(minutes=5)
+    @tasks.loop(minutes=1)
     async def dateCheck(self):
 
-        # currentDay = datetime.today().date().strftime("%d-%m-%Y")
-        currentDay = ""
+        currentDay = datetime.today().date().strftime("%d-%m-%Y")
+
 
         if self.today != currentDay:
             # keeping tracking of the day  before
             # updating today so it is the correct date
-            # self.today = currentDay
+            self.today = currentDay
 
             self.dataBase.setNewDayStats()
 
@@ -697,7 +783,7 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
 
             footer=dict(text=f"HAPPY STREAKING!"),
         )
-        await ctx.channel.send(embed=discord.Embed.from_dict(self.embed), delete_after=60)
+        await ctx.channel.send(embed=discord.Embed.from_dict(self.embed))
 
     async def mentionStreak(self, ctx, user, guild):
 
@@ -879,7 +965,7 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
 
             )
 
-            await ctx.channel.send(embed=discord.Embed.from_dict(embed), delete_after=60)
+            await ctx.channel.send(embed=discord.Embed.from_dict(embed))
             # no need to go next step
             return
 
@@ -905,7 +991,7 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
                     ],
                     footer=dict(text="We hope you find everything OK!"),
                 )
-                await ctx.channel.send(embed=discord.Embed.from_dict(embed), delete_after=60)
+                await ctx.channel.send(embed=discord.Embed.from_dict(embed))
 
             elif command.lower() in command_event.commands:
 
@@ -922,7 +1008,7 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
                     ],
                     footer=dict(text="We hope you find everything OK!"),
                 )
-                await ctx.channel.send(embed=discord.Embed.from_dict(embed), delete_after=60)
+                await ctx.channel.send(embed=discord.Embed.from_dict(embed))
 
             else:
 
@@ -940,6 +1026,16 @@ class StreakBot(commands.Cog, command_attrs=dict(hidden=False, brief="Normal Use
             self.dataBase.setMsgCountToUser(testGuildID, mentionedUserID, int(amount))
 
             await ctx.channel.send(f"{mentionedUser} MSG point has been set to {amount} ")
+
+    # this is only for debugging not to be used for implementation
+    @commands.command(hidden=True)
+    async def debug(self, ctx):
+
+        user_id = 125604422007914497
+
+        if ctx.author.id == user_id:
+            active_calls = len(self.dataBase.get_active_calls())
+            await ctx.channel.send(f"Active calls: {active_calls}", delete_after=10)
 
 
 class CommandEvent:
