@@ -1,5 +1,7 @@
 # DiscordStreakBot
 
+PROJECT HAS BEEN DISCONTINUED! I DONT KNOW IF IT WORKS ANYMORE
+
 <a href="https://top.gg/bot/685559923450445887" >
   <img src="https://top.gg/api/widget/685559923450445887.svg" alt="DiscordStreak" />
 </a>
